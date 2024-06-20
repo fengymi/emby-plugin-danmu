@@ -1,0 +1,5 @@
+is_global = true
+build_property.RootNamespace = Emby.Plugin.Danmu
+build_property.ProjectDir = /Users/fengymi/RiderProjects/Emby.Plugin.Danmu/Emby.Plugin.Danmu/
+build_property.EnableComHosting = 
+build_property.EnableGeneratedComInterfaceComImportInterop = 
