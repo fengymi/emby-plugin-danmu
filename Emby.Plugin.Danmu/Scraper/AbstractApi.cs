@@ -1,6 +1,8 @@
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using Emby.Plugin.Danmu.Core.Extensions;
 using Emby.Plugin.Danmu.Core.Http;
 using MediaBrowser.Common.Net;
@@ -68,6 +70,46 @@ namespace Emby.Plugin.Danmu.Scraper
             }
         }
 
+        protected virtual Dictionary<string, string> GetDefaultHeaders() => null;
+
+        protected virtual string[] GetDefaultCookies(string? url = null) => null;
+
+        protected HttpRequestOptions GetDefaaultHttpRequestOptions(string url, string? cookies = null,
+            CancellationToken cancellationToken = default)
+        {
+            HttpRequestOptions httpRequestOptions = new HttpRequestOptions
+            {
+                Url = url,
+                UserAgent = $"{HTTP_USER_AGENT}",
+                TimeoutMs = 30000,
+                EnableHttpCompression = true,
+                RequestContentType = "application/json",
+                AcceptHeader = "application/json",
+                CancellationToken = cancellationToken
+            };
+            
+            Dictionary<string,string> requestHeaders = httpRequestOptions.RequestHeaders;
+            Dictionary<string,string> defaultHeaders = GetDefaultHeaders();
+            if (defaultHeaders != null )
+            {
+                foreach (var kvp in defaultHeaders)
+                {
+                    requestHeaders.Add(kvp.Key, kvp.Value);
+                }
+            }
+
+            var defaultCookies = GetDefaultCookies(url);
+            if (cookies != null)
+            {
+                requestHeaders["Cookie"] = cookies;
+            }
+            else if (defaultCookies != null && defaultCookies.Length > 0)
+            {
+                requestHeaders["Cookie"] = string.Join(",", defaultCookies);
+            }
+
+            return httpRequestOptions;
+        }
 
         public void Dispose()
         {

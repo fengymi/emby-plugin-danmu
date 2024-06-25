@@ -1,14 +1,16 @@
 using System;
+using System.Linq;
 using MediaBrowser.Model.Logging;
 
 namespace Emby.Plugin.Danmu.Core.Extensions
 {
     public static class ILoggerExtension
     {
-        private static readonly string DefaultName = "com.fengymi.danmu";
+        private static readonly string DefaultName = "com.self.danmu.";
         public static ILogger getDefaultLogger(this ILogManager logManager, params string?[] args)
         {
-            return logManager.GetLogger(DefaultName);
+            string logName = string.Join(".", args.Where(arg => !string.IsNullOrEmpty(arg)).Select(arg => $"{DefaultName}{arg}"));
+            return logManager.GetLogger(logName);
         }
 
         public static void LogError(this ILogger logger, Exception? ex, string? message, params object?[] args)

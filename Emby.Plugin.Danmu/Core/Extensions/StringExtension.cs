@@ -26,6 +26,23 @@ namespace Emby.Plugin.Danmu.Core.Extensions
             return 0;
         }
 
+        public static string ChineseToUnicode(this string text)
+        {
+            var sb = new StringBuilder();
+            foreach (var c in text)
+            {
+                // 检查字符是否为中文字符的范围
+                if (c >= 0x4E00 && c <= 0x9FFF) 
+                {
+                    sb.Append("\\u" + ((int)c).ToString("x4"));
+                }
+                else
+                {
+                    sb.Append(c);
+                }
+            }
+            return sb.ToString();
+        }
 
 
         public static float ToFloat(this string s)

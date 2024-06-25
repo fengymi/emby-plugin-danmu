@@ -76,6 +76,7 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
             var animes = await this._api.SearchAsync(searchName, CancellationToken.None).ConfigureAwait(false);
             foreach (var anime in animes)
             {
+                log.Info("anime = {0}, item={1}", anime.ToJson(), item.ToJson());
                 var animeId = anime.AnimeId;
                 var title = anime.AnimeTitle;
                 var pubYear = anime.Year;
@@ -94,7 +95,7 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
                 var score = searchName.Distance(title);
                 if (score < 0.7)
                 {
-                    log.LogDebug("[{0}] 标题差异太大，忽略处理. 搜索词：{1}, score:　{2}", title, searchName, score);
+                    log.Info("[{0}] 标题差异太大，忽略处理. 搜索词：{1}, score:　{2}", title, searchName, score);
                     continue;
                 }
 
@@ -102,10 +103,11 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
                 var itemPubYear = item.ProductionYear ?? 0;
                 if (itemPubYear > 0 && pubYear > 0 && itemPubYear != pubYear)
                 {
-                    log.LogDebug("[{0}] 发行年份不一致，忽略处理. dandan：{1} jellyfin: {2}", title, pubYear, itemPubYear);
+                    log.Info("[{0}] 发行年份不一致，忽略处理. dandan：{1} jellyfin: {2}", title, pubYear, itemPubYear);
                     continue;
                 }
-
+                
+                log.Info("anime = {0}, animeId={1}", $"{animeId}", animeId);
                 return $"{animeId}";
             }
 

@@ -1,0 +1,16 @@
+<div is="emby-scroller" class="view flex flex-direction-column scrollFrameY flex-grow" data-horizontal="false" data-forcescrollbar="true" data-centerfocus="true" data-bindheader="true" data-controller="__plugin/fanartjs" data-title="Fanart.tv">
+    <div class="scrollSlider flex-grow flex-direction-column padded-left padded-left-page padded-right padded-top-page padded-bottom-page">
+
+        <form class="auto-center">
+            <div class="inputContainer">
+                <input is="emby-input" type="text" id="txtFanartApiKey" label="${LabelFanartApiKey}" />
+                <div class="fieldDescription">${LabelFanartApiKeyHelp}</div>
+                <div class="fieldDescription"><a is="emby-linkbutton" class="button-link" href="https://fanart.tv/2015/01/personal-api-keys" target="_blank">${LearnMore}</a></div>
+            </div>
+
+            <div>
+                <button is="emby-button" type="submit" class="raised button-submit block"><span>${Save}</span></button>
+            </div>
+        </form>
+    </div>
+</div>

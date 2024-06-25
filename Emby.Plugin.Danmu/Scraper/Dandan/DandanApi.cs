@@ -107,28 +107,42 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
                 return anime;
             }
 
-            // var url = $"https://api.dandanplay.net/api/v2/bangumi/{animeId}";
+            var url = $"https://api.dandanplay.net/api/v2/bangumi/{animeId}";
+            var response = await httpClient.GetResponse(new HttpRequestOptions
+            {
+                //Url = $"http://sub.xmp.sandai.net:8000/subxl/{cid}.json",
+                Url = url,
+                UserAgent = $"{HTTP_USER_AGENT}",
+                TimeoutMs = 30000,
+                AcceptHeader = "application/json",
+            }).ConfigureAwait(false);
             // var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
             // response.EnsureSuccessStatusCode();
-            //
+                        
+            if (response.StatusCode != HttpStatusCode.OK)
+            { 
+                return null;
+            }
+            
+            AnimeResult result = _jsonSerializer.DeserializeFromStream<AnimeResult>(response.Content);
             // var result = await response.Content.ReadFromJsonAsync<AnimeResult>(cancellationToken)
             //     .ConfigureAwait(false);
-            // if (result != null && result.Success && result.Bangumi != null)
-            // {
-            //     // 过滤掉特典剧集，episodeNumber为S1/S2.。。
-            //     anime = result.Bangumi;
-            //     if (anime.Episodes != null)
-            //     {
-            //         anime.Episodes = anime.Episodes.Where(x =>
-            //         {
-            //             bool success = int.TryParse(x.EpisodeNumber, out int parsedNumber);
-            //             return success && parsedNumber > 0;
-            //         }).ToList();
-            //     }
-            //
-            //     _memoryCache.Set<Anime?>(cacheKey, anime, expiredOption);
-            //     return anime;
-            // }
+            if (result != null && result.Success && result.Bangumi != null)
+            {
+                // 过滤掉特典剧集，episodeNumber为S1/S2.。。
+                anime = result.Bangumi;
+                if (anime.Episodes != null)
+                {
+                    anime.Episodes = anime.Episodes.Where(x =>
+                    {
+                        bool success = int.TryParse(x.EpisodeNumber, out int parsedNumber);
+                        return success && parsedNumber > 0;
+                    }).ToList();
+                }
+            
+                _memoryCache.Set<Anime?>(cacheKey, anime, expiredOption);
+                return anime;
+            }
 
             _memoryCache.Set<Anime?>(cacheKey, null, expiredOption);
             return null;
@@ -140,21 +154,16 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
             {
                 throw new ArgumentNullException(nameof(epId));
             }
+
+            var withRelated = this.Config.WithRelatedDanmu ? "true" : "false";
+            var chConvert = this.Config.ChConvert;
+            var url = $"https://api.dandanplay.net/api/v2/comment/{epId}?withRelated={withRelated}&chConvert={chConvert}";
+            var result = await httpClient.GetSelfResultAsync<CommentResult>(GetDefaaultHttpRequestOptions(url)).ConfigureAwait(false);
             
-
-            // var withRelated = this.Config.WithRelatedDanmu ? "true" : "false";
-            // var chConvert = this.Config.ChConvert;
-            // var url =
-            //     $"https://api.dandanplay.net/api/v2/comment/{epId}?withRelated={withRelated}&chConvert={chConvert}";
-            // var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
-            // response.EnsureSuccessStatusCode();
-            // var result = await response.Content.ReadFromJsonAsync<CommentResult>(cancellationToken)
-            //     .ConfigureAwait(false);
-            // if (result != null)
-            // {
-            //     return result.Comments;
-            // }
-
+            if (result != null)
+            {
+                return result.Comments;
+            }
             throw new Exception($"Request fail. epId={epId}");
         }
 

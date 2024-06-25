@@ -12,17 +12,16 @@
         <EmbeddedResource Include="ThumbImage.png"/>
     </ItemGroup>
     <ItemGroup>
+        <PackageReference Include="ComposableAsync.Core" Version="1.3.0" />
         <PackageReference Include="MediaBrowser.Server.Core" Version="4.8.5"/>
-<!--        <PackageReference Include="System.Memory" Version="4.5.1" />-->
-
+        <!--        <PackageReference Include="System.Memory" Version="4.5.1" />-->
         <!--              <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />-->
         <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.2.0"/>
         <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="2.2.0"/>
+        <PackageReference Include="SharpZipLib.NETStandard" Version="1.0.7" />
         <PackageReference Include="System.Net.Http.Json" Version="8.0.0"/>
-<!--        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>-->
+        <!--        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>-->
         <!--      <PackageReference Include="System.Text.Json" Version="8.0.3" />-->
-        <!--        <PackageReference Include="RateLimiter" Version="2.2.0" />-->
-        <!--        <PackageReference Include="SharpZipLib" Version="1.4.2" />-->
     </ItemGroup>
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">

@@ -2,6 +2,15 @@
   "version": 3,
   "targets": {
     ".NETStandard,Version=v2.0": {
+      "ComposableAsync.Core/1.3.0": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard2.0/ComposableAsync.Core.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/ComposableAsync.Core.dll": {}
+        }
+      },
       "MediaBrowser.Common/4.8.5": {
         "type": "package",
         "compile": {
@@ -177,6 +186,22 @@
           "build/netstandard2.0/NETStandard.Library.targets": {}
         }
       },
+      "SharpZipLib.NETStandard/1.0.7": {
+        "type": "package",
+        "dependencies": {
+          "NETStandard.Library": "1.6.1"
+        },
+        "compile": {
+          "lib/netstandard1.3/ICSharpCode.SharpZipLib.dll": {
+            "related": ".deps.json;.pdb;.xml"
+          }
+        },
+        "runtime": {
+          "lib/netstandard1.3/ICSharpCode.SharpZipLib.dll": {
+            "related": ".deps.json;.pdb;.xml"
+          }
+        }
+      },
       "System.Buffers/4.5.1": {
         "type": "package",
         "compile": {
@@ -325,6 +350,20 @@
     }
   },
   "libraries": {
+    "ComposableAsync.Core/1.3.0": {
+      "sha512": "G+dQnCtP0APtOTGf3my86WMWWRWQwtmdka/B4SOBi3FmFsG1sPv7IX2KViloIyyQrRlAxP/NILXfYnGmxAxoLQ==",
+      "type": "package",
+      "path": "composableasync.core/1.3.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "composableasync.core.1.3.0.nupkg.sha512",
+        "composableasync.core.nuspec",
+        "lib/net472/ComposableAsync.Core.dll",
+        "lib/netstandard2.0/ComposableAsync.Core.dll",
+        "lib/netstandard2.1/ComposableAsync.Core.dll"
+      ]
+    },
     "MediaBrowser.Common/4.8.5": {
       "sha512": "fuJk00dysKCoK7LgbimFf5632kvSOW3YuMJpRoUXyQHStBiyUFi17mpjbI6GZdVabpCLnwNTAuZpbaCcOwQmDw==",
       "type": "package",
@@ -596,6 +635,24 @@
         "lib/netstandard1.0/_._",
         "netstandard.library.2.0.3.nupkg.sha512",
         "netstandard.library.nuspec"
+      ]
+    },
+    "SharpZipLib.NETStandard/1.0.7": {
+      "sha512": "mYKPizF2CY32RQB8FITYy0e30gVgItFA63SFquruaxq+votwL1T+yOfssK10v4enBcxklr8ks48hS1emw5TTXg==",
+      "type": "package",
+      "path": "sharpziplib.netstandard/1.0.7",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "lib/net45/ICSharpCode.SharpZipLib.dll",
+        "lib/net45/ICSharpCode.SharpZipLib.pdb",
+        "lib/net45/ICSharpCode.SharpZipLib.xml",
+        "lib/netstandard1.3/ICSharpCode.SharpZipLib.deps.json",
+        "lib/netstandard1.3/ICSharpCode.SharpZipLib.dll",
+        "lib/netstandard1.3/ICSharpCode.SharpZipLib.pdb",
+        "lib/netstandard1.3/ICSharpCode.SharpZipLib.xml",
+        "sharpziplib.netstandard.1.0.7.nupkg.sha512",
+        "sharpziplib.netstandard.nuspec"
       ]
     },
     "System.Buffers/4.5.1": {
@@ -987,10 +1044,12 @@
   },
   "projectFileDependencyGroups": {
     ".NETStandard,Version=v2.0": [
+      "ComposableAsync.Core >= 1.3.0",
       "MediaBrowser.Server.Core >= 4.8.5",
       "Microsoft.Extensions.Caching.Abstractions >= 2.2.0",
       "Microsoft.Extensions.Caching.Memory >= 2.2.0",
       "NETStandard.Library >= 2.0.3",
+      "SharpZipLib.NETStandard >= 1.0.7",
       "System.Net.Http.Json >= 8.0.0"
     ]
   },
@@ -1031,6 +1090,10 @@
       "netstandard2.0": {
         "targetAlias": "netstandard2.0",
         "dependencies": {
+          "ComposableAsync.Core": {
+            "target": "Package",
+            "version": "[1.3.0, )"
+          },
           "MediaBrowser.Server.Core": {
             "target": "Package",
             "version": "[4.8.5, )"
@@ -1048,6 +1111,10 @@
             "target": "Package",
             "version": "[2.0.3, )",
             "autoReferenced": true
+          },
+          "SharpZipLib.NETStandard": {
+            "target": "Package",
+            "version": "[1.0.7, )"
           },
           "System.Net.Http.Json": {
             "target": "Package",

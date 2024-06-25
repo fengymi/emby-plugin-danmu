@@ -15,7 +15,7 @@
                     <div class="sectionTitleContainer flex align-items-center">
                         <h2 class="sectionTitle">Danmu 配置</h2><span id="current_version" name="current_version"
                             is="emby-linkbutton" class="emby-button"></span>
-                        <a is="emby-linkbutton" class="raised button-alt headerHelpButton emby-button" target="_blank"
+                        <a id="test" is="emby-linkbutton" class="raised button-alt headerHelpButton emby-button" target="_blank"
                             href="https://github.com/cxfksword/jellyfin-plugin-danmu">源码</a>
                     </div>
                 </div>
@@ -102,10 +102,57 @@
                 </form>
             </div>
         </div>
+<!--        <script type="text/javascript">-->
+<!--            alert("test a");-->
+<!--            define(['baseView', 'loading', 'emby-input', 'emby-button', 'emby-scroller'], function (BaseView, loading) {-->
+<!--                'use strict';-->
+
+<!--                alert("test")-->
+<!--                console.log("test")-->
+<!--                -->
+<!--                Object.assign(View.prototype, BaseView.prototype);-->
+
+<!--                View.prototype.onResume = function (options) {-->
+<!--                    console.log("test2")-->
+<!--                    BaseView.prototype.onResume.apply(this, arguments);-->
+
+<!--                    loading.show();-->
+
+<!--                    var page = this.view;-->
+
+<!--                    ApiClient.getPluginConfiguration("cdbc5624-3ea9-4f9d-94cc-3be20585f926").then(function (response) {-->
+
+<!--                        console.log(response)-->
+<!--                        // loadPage(page, response);-->
+<!--                    });-->
+<!--                };-->
+
+<!--                return View;-->
+
+<!--            });-->
+<!--        </script>-->
+        
         <script type="text/javascript">
             var TemplateConfig = {
-                pluginUniqueId: '5B39DA44-5314-4940-8E26-54C821C17F86'
+                pluginUniqueId: 'cdbc5624-3ea9-4f9d-94cc-3be20585f926'
             };
+            $("#test").innerText = "hello"
+
+            function loadPage(page, config) {
+                console.log("get config = {} ", config);
+                console.log(config);
+                
+                page.querySelector('#txtFanartApiKey').value = config.UserApiKey || '';
+
+                loading.hide();
+            }
+            
+            console.log("ApiClient 获取");
+            console.log(ApiClient);
+            ApiClient.getPluginConfiguration(TemplateConfig.pluginUniqueId).then(function (config) {
+                console.log("插件 config 获取");
+                console.log(config);
+            });
 
             document.querySelector('#TemplateConfigPage')
                 .addEventListener('pageshow', function () {

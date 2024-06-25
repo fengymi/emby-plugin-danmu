@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Emby.Plugin.Danmu.Configuration;
 using Emby.Plugin.Danmu.Core;
 using Emby.Plugin.Danmu.Core.Extensions;
+using Emby.Plugin.Danmu.Core.Singleton;
 using Emby.Plugin.Danmu.Model;
 using Emby.Plugin.Danmu.Scraper;
 using MediaBrowser.Controller.Dto;
@@ -53,18 +54,15 @@ namespace Emby.Plugin.Danmu
         /// <param name="fileSystem">Instance of the <see cref="IFileSystem"/> interface.</param>
         /// <param name="logManager"></param>
         /// <param name="scraperManager"></param>
-        public LibraryManagerEventsHelper(ILibraryManager libraryManager, ILogManager logManager, ScraperManager scraperManager)
+        public LibraryManagerEventsHelper(ILibraryManager libraryManager, ILogManager logManager)
         {
-            
             _queuedEvents = new List<LibraryEvent>();
             _memoryCache = new MemoryCache(new MemoryCacheOptions());
 
             _libraryManager = libraryManager;
-            _logger = logManager.GetLogger(GetType().ToString());
-            _scraperManager = scraperManager;
+            _logger = logManager.getDefaultLogger(GetType().ToString());
+            _scraperManager = SingletonManager.ScraperManager;
             _fileSystem = FileSystem.instant;
-
-            this._logger.Info("LibraryManagerEventsHelper 加载完成 {0}", index++);
         }
 
         /// <summary>
@@ -348,7 +346,7 @@ namespace Emby.Plugin.Danmu
             // 更新，判断是否有bvid，有的话刷新弹幕文件
             if (eventType == EventType.Add)
             {
-                var queueUpdateMeta = new List<BaseItem>();
+                // var queueUpdateMeta = new List<BaseItem>();
                 foreach (var item in movies)
                 {
                     foreach (var scraper in _scraperManager.All())
@@ -356,9 +354,9 @@ namespace Emby.Plugin.Danmu
                         try
                         {
                             // 读取最新数据，要不然取不到年份信息
-                            var currentItem = _libraryManager.GetItemById(item.Id) ?? item;
-
+                            var currentItem = _libraryManager.GetItemById(item.InternalId) ?? item;
                             var mediaId = await scraper.SearchMediaId(currentItem);
+                            _logger.Info("查询弹幕id mediaId={0}", mediaId);
                             if (string.IsNullOrEmpty(mediaId))
                             {
                                 _logger.LogInformation("[{0}]匹配失败：{1} ({2})", scraper.Name, item.Name,
@@ -371,12 +369,13 @@ namespace Emby.Plugin.Danmu
                             {
                                 var providerVal = media.Id;
                                 var commentId = media.CommentId;
-                                _logger.LogInformation("[{0}]匹配成功：name={1} ProviderId: {2}", scraper.Name, item.Name,
-                                    providerVal);
+                                _logger.LogInformation("[{0}]匹配成功：name={1} ProviderId: {2}, CommentId={3}", scraper.Name, item.Name,
+                                    providerVal, media.CommentId);
 
                                 // 更新epid元数据
                                 item.SetProviderId(scraper.ProviderId, providerVal);
-                                queueUpdateMeta.Add(item);
+                                item.UpdateToRepository(ItemUpdateType.MetadataEdit);
+                                // queueUpdateMeta.Add(item);
 
                                 // 下载弹幕
                                 await this.DownloadDanmu(scraper, item, commentId).ConfigureAwait(false);
@@ -394,7 +393,7 @@ namespace Emby.Plugin.Danmu
                     }
                 }
 
-                await ProcessQueuedUpdateMeta(queueUpdateMeta).ConfigureAwait(false);
+                // await ProcessQueuedUpdateMeta(queueUpdateMeta).ConfigureAwait(false);
             }
 
 
@@ -520,6 +519,8 @@ namespace Emby.Plugin.Danmu
         /// <returns>Task.</returns>
         public async Task ProcessQueuedSeasonEvents(IReadOnlyCollection<LibraryEvent> events, EventType eventType)
         {
+            
+            _logger.Info("ProcessQueuedSeasonEvents 收到数据events={0}, eventType={1}", events.ToJson(), eventType.ToJson());
             if (events.Count == 0)
             {
                 return;
@@ -583,7 +584,8 @@ namespace Emby.Plugin.Danmu
 
                             // 更新seasonId元数据
                             season.SetProviderId(scraper.ProviderId, mediaId);
-                            queueUpdateMeta.Add(season);
+                            season.UpdateToRepository(ItemUpdateType.MetadataEdit);
+                            // queueUpdateMeta.Add(season);
 
                             _logger.LogInformation("[{0}]匹配成功：name={1} season_number={2} ProviderId: {3}", scraper.Name,
                                 season.Name, season.IndexNumber, mediaId);
@@ -601,7 +603,7 @@ namespace Emby.Plugin.Danmu
                 }
 
                 // 保存元数据
-                await ProcessQueuedUpdateMeta(queueUpdateMeta).ConfigureAwait(false);
+                // await ProcessQueuedUpdateMeta(queueUpdateMeta).ConfigureAwait(false);
             }
 
             if (eventType == EventType.Update)
@@ -871,9 +873,10 @@ namespace Emby.Plugin.Danmu
                         item.ProviderIds[pair.Key] = pair.Value;
                     }
 
+                    item.UpdateToRepository(ItemUpdateType.MetadataEdit);
                     // Console.WriteLine(JsonSerializer.Serialize(item));
-                    await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None)
-                        .ConfigureAwait(false);
+                    // await item.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None)
+                    //     .ConfigureAwait(false);
                 }
             }
 
@@ -888,7 +891,7 @@ namespace Emby.Plugin.Danmu
             try
             {
                 // 弹幕5分钟内更新过，忽略处理（有时Update事件会重复执行）
-                if (!ignoreCheck && _memoryCache.TryGetValue(checkDownloadedKey, out var latestDownloaded))
+                if (!SingletonManager.IsDebug && !ignoreCheck && _memoryCache.TryGetValue(checkDownloadedKey, out var latestDownloaded))
                 {
                     _logger.LogInformation("[{0}]最近5分钟已更新过弹幕xml，忽略处理：{1}.{2}", scraper.Name, item.IndexNumber,
                         item.Name);
@@ -899,6 +902,8 @@ namespace Emby.Plugin.Danmu
                 var danmaku = await scraper.GetDanmuContent(item, commentId);
                 if (danmaku != null)
                 {
+                    _logger.Info("查询弹幕结果 danmaku={0}", danmaku.ToJson());
+                    
                     var bytes = danmaku.ToXml();
                     if (bytes.Length < 1024)
                     {

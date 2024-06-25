@@ -41,7 +41,6 @@ namespace Emby.Plugin.Danmu.Scraper
                         orderScrapers.Add(scraperMap[config.Name]);
                     }
                 }
-                log.Info("当前配置信息 configScrapers={0}", configScrapers.ToJson());
                 
                 // 添加新增并默认启用的源
                 var allOldScaperNames = configScrapers.Select(o => o.Name).ToList();
@@ -51,11 +50,6 @@ namespace Emby.Plugin.Danmu.Scraper
                     {
                         orderScrapers.Add(scraper);
                     }
-                }
-
-                foreach (AbstractScraper abstractScraper in orderScrapers)
-                {
-                    log.Info("abstractScraper = {0}, ProviderId={1}, name={2}", abstractScraper, abstractScraper.ProviderId, abstractScraper.ProviderName);
                 }
 
                 return orderScrapers.AsReadOnly();

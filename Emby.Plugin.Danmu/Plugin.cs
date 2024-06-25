@@ -6,11 +6,10 @@ using Emby.Plugin.Danmu.Configuration;
 using Emby.Plugin.Danmu.Core.Extensions;
 using Emby.Plugin.Danmu.Core.Singleton;
 using Emby.Plugin.Danmu.Scraper;
-using Emby.Plugin.Danmu.Scraper.Dandan;
+using Emby.Plugin.Danmu.Scraper.Iqiyi;
+using Emby.Plugin.Danmu.Scraper.Tencent;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Net;
-using MediaBrowser.Controller;
-using MediaBrowser.Controller.Plugins;
 using MediaBrowser.Model.Plugins;
 using MediaBrowser.Model.Serialization;
 
@@ -42,33 +41,33 @@ namespace Emby.Plugin.Danmu
         /// <param name="logManager">The log manager.</param>
         /// <param name="xmlSerializer"></param>
         /// <param name="scraperManager"></param>
+        /// <param name="jsonSerializer"></param>
+        /// <param name="httpClient"></param>
         public Plugin(IApplicationPaths applicationPaths, 
             IApplicationHost applicationHost, 
             ILogManager logManager, 
             IXmlSerializer xmlSerializer, 
             ScraperManager scraperManager, 
             IJsonSerializer jsonSerializer,
-            IHttpClient httpClient) 
+            IHttpClient httpClient
+            ) 
             : base(applicationPaths, xmlSerializer)
         {
             SingletonManager.ScraperManager = scraperManager;
             SingletonManager.JsonSerializer = jsonSerializer;
             SingletonManager.HttpClient = httpClient;
+            SingletonManager.LogManager = logManager;
+            SingletonManager.LibraryManagerEventsHelper = applicationHost.Resolve<LibraryManagerEventsHelper>();
             
-            this.logger = logManager.getDefaultLogger();
+            logger = logManager.getDefaultLogger();
             Instance = this;
-            this.logger.Info("danmu plugin httpClient={0} ", httpClient);
-            Scrapers = applicationHost.GetExports<AbstractScraper>(false).Where(o => o != null).OrderBy(x => x.DefaultOrder).ToList().AsReadOnly();
-            scraperManager.Register(Scrapers);
-            this.logger.Info("danmu plugin ({0}) is getting loaded scraperManager={1}", Scrapers.Count, scraperManager.GetType().ToString());
-
-            // // AbstractScraper dandan = (AbstractScraper)applicationHost.CreateInstance(typeof(Dandan));
-            // List<AbstractScraper> abstractScrapers = new List<AbstractScraper>();
-            // abstractScrapers.Add(new Dandan(logManager));
+            Scrapers = applicationHost.GetExports<AbstractScraper>(false)
+                .Where(o => o != null && o.Name.Equals(Iqiyi.ScraperProviderName))
+                .OrderBy(x => x.DefaultOrder).ToList().AsReadOnly();
             
-            // Scrapers = abstractScrapers.AsReadOnly();
-            // scraperManager.Register(Scrapers);
-            this.logger.Info("danmu plugin {0}, {1}",  Scrapers.Count, Scrapers);
+            scraperManager.Register(Scrapers);
+            
+            logger.Info("danmu 插件加载完成, 支持{0}个, {1}", Scrapers.Count, Scrapers.ToJson());
         }
 
         public override string Description => "全网弹幕插件";
@@ -110,5 +109,24 @@ namespace Emby.Plugin.Danmu
                 }
             };
         }
+        
+        // public IEnumerable<PluginPageInfo> GetPages()
+        // {
+        //     return new[]
+        //     {
+        //         new PluginPageInfo
+        //         {
+        //             Name = "fanart",
+        //             EmbeddedResourcePath = GetType().Namespace + ".Configuration.fanart.html",
+        //             MenuSection = "server",
+        //             MenuIcon = "photo"
+        //         },
+        //         new PluginPageInfo
+        //         {
+        //             Name = "fanartjs",
+        //             EmbeddedResourcePath = GetType().Namespace + ".Configuration.fanart.js"
+        //         }
+        //     };
+        // }
     }
 }
