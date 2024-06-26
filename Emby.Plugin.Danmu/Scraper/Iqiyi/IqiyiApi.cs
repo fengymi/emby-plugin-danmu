@@ -275,7 +275,6 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
             }
             catch (Exception ex)
             {
-                _logger.ErrorException("查询数据失败 tvId={0}, mat={1}", ex, tvId, mat);
                 break;
             }
 
@@ -291,7 +290,6 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
     // mat从0开始，视频分钟数
     public async Task<List<IqiyiComment>> GetDanmuContentByMatAsync(string tvId, int mat, CancellationToken cancellationToken)
     {
-        _logger.Info("GetDanmuContent tvId={0}", tvId);
         if (string.IsNullOrEmpty(tvId))
         {
             return new List<IqiyiComment>();
@@ -303,12 +301,11 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
         var url = $"http://cmts.iqiyi.com/bullet/{s1}/{s2}/{tvId}_300_{mat}.z";
         HttpRequestOptions defaaultHttpRequestOptions = GetDefaaultHttpRequestOptions(url, null, cancellationToken);
         var response = await httpClient.GetSelfResponse(defaaultHttpRequestOptions);
-        if (response.StatusCode != HttpStatusCode.OK)
+        if (!(response.StatusCode >= HttpStatusCode.OK && response.StatusCode <= (HttpStatusCode)299))
         {
+            _logger.Info("请求http异常, httpRequestOptions={0}, status={1}", defaaultHttpRequestOptions.ToString(), response.StatusCode);
             throw new HttpRequestException("请求异常 code=" + response.StatusCode);
         }
-        _logger.Info("GetDanmuContent response={0}", response);
-
         
         using (var zipStream = response.Content)
         {
@@ -325,7 +322,6 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
                     } while (decompressedLength > 0);
                 }
 
-                _logger.Info("memoryStream = {0}", memoryStream.ToString());
                 memoryStream.Position = 0;
                 using (var reader = new StreamReader(memoryStream))
                 {

@@ -28,7 +28,7 @@ namespace Emby.Plugin.Danmu.Scraper.Tencent
 
         public override bool DefaultEnable => true;
 
-        public override string Name => "腾讯";
+        public override string Name => ScraperProviderName;
 
         public override string ProviderName => ScraperProviderName;
 
@@ -184,6 +184,7 @@ namespace Emby.Plugin.Danmu.Scraper.Tencent
             var danmaku = new ScraperDanmaku();
             danmaku.ChatId = 1000;
             danmaku.ChatServer = "dm.video.qq.com";
+            danmaku.ProviderId = ProviderId;
             foreach (var comment in comments)
             {
                 try
@@ -224,7 +225,8 @@ namespace Emby.Plugin.Danmu.Scraper.Tencent
                 {
                 }
             }
-
+            
+            danmaku.DataSize = danmaku.Items.Count;
             return danmaku;
         }
 

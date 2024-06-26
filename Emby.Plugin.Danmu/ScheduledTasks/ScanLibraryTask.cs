@@ -71,11 +71,8 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
             {
                 // MediaTypes = new[] { MediaType.Video },
                 ExcludeProviderIds = this.GetScraperFilter(scrapers),
-                IncludeItemTypes = new[] { "Movie", "Episode"}
+                IncludeItemTypes = new[] { "Movie", "Season"}
             }).ToList();
-
-            _logger.LogInformation("Scan danmu for {0} scrapers.", scrapers.Count);
-            _logger.LogInformation("Scan danmu for {0} videos.", items.Count);
 
             var successCount = 0;
             var failCount = 0;
@@ -86,10 +83,8 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
                 BaseItem item = items[idx];
                 cancellationToken.ThrowIfCancellationRequested();
                 progress?.Report((double)idx / items.Count * 100);
-
                 try
                 {
-                    _logger.Info("Scan danmu for type={0}, movie={1}, season={2}, Episode={3}", item.GetType().ToString(), (item is Movie), (item is Season), (item is Episode));
                     // 有epid的忽略处理（不需要再匹配）
                     if (this.HasAnyScraperProviderId(scrapers, item))
                     {
@@ -115,11 +110,12 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
                         await _libraryManagerEventsHelper.ProcessQueuedSeasonEvents(new List<LibraryEvent>() { new LibraryEvent { Item = seasonItem, EventType = EventType.Add } }, EventType.Add).ConfigureAwait(false);
                         // 下载剧集弹幕
                         await _libraryManagerEventsHelper.ProcessQueuedSeasonEvents(new List<LibraryEvent>() { new LibraryEvent { Item = seasonItem, EventType = EventType.Update } }, EventType.Update).ConfigureAwait(false);
-                    } else if (item is Episode)
-                    {
-                        var episodeItem = (Episode)item;
-                        await _libraryManagerEventsHelper.ProcessQueuedSeasonEvents(new List<LibraryEvent>() { new LibraryEvent { Item = episodeItem, EventType = EventType.Update } }, EventType.Update).ConfigureAwait(false);
-                    }
+                    } 
+                    // else if (item is Episode)
+                    // {
+                    //     var episodeItem = (Episode)item;
+                    //     await _libraryManagerEventsHelper.ProcessQueuedSeasonEvents(new List<LibraryEvent>() { new LibraryEvent { Item = episodeItem, EventType = EventType.Update } }, EventType.Update).ConfigureAwait(false);
+                    // }
                     
                     successCount++;
                 }

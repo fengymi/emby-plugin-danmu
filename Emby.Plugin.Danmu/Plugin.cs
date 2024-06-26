@@ -62,11 +62,11 @@ namespace Emby.Plugin.Danmu
             logger = logManager.getDefaultLogger();
             Instance = this;
             Scrapers = applicationHost.GetExports<AbstractScraper>(false)
-                .Where(o => o != null && o.Name.Equals(Iqiyi.ScraperProviderName))
-                .OrderBy(x => x.DefaultOrder).ToList().AsReadOnly();
-            
+                .Where(o => o != null)
+                .OrderBy(x => x.DefaultOrder)
+                .ToList()
+                .AsReadOnly();
             scraperManager.Register(Scrapers);
-            
             logger.Info("danmu 插件加载完成, 支持{0}个, {1}", Scrapers.Count, Scrapers.ToJson());
         }
 

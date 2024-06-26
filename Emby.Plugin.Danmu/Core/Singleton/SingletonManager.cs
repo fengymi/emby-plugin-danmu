@@ -7,7 +7,7 @@ namespace Emby.Plugin.Danmu.Core.Singleton
 {
     public static class SingletonManager
     {
-        public static bool IsDebug = true;
+        public static bool IsDebug = false;
         
         public static ScraperManager ScraperManager;
         public static IJsonSerializer JsonSerializer;

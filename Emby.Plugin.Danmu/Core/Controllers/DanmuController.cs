@@ -1,14 +1,20 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
+using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Xml;
+using Emby.Plugin.Danmu.Core.Controllers.Dto;
 using Emby.Plugin.Danmu.Core.Extensions;
 using Emby.Plugin.Danmu.Core.Singleton;
 using Emby.Plugin.Danmu.Model;
 using Emby.Plugin.Danmu.Scraper;
 using MediaBrowser.Controller.Api;
+using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.MediaInfo;
@@ -20,15 +26,19 @@ namespace Emby.Plugin.Danmu.Core.Controllers
     [Route("/plugin/danmu/{id}")]
     [Route("/api/danmu/{id}")]
     [Route("/api/danmu/search")]
-    public class DanmuParams : IReturn<DanmuFileInfo>
+    public class DanmuParams : IReturn<object>
     {
-        public string id { get; set; } = string.Empty;
-        public string keyword { get; set; } = string.Empty;
-    }
-    
-    public class DanmuResult
-    {
-        public string value { get; set; } = string.Empty;
+        [DataMember(Name="id")]
+        public string Id { get; set; } = string.Empty;
+        
+        [DataMember(Name="needSites")]
+        public List<string> NeedSites = new List<string>();
+        
+        [DataMember(Name="option")]
+        public string Option { get; set; } = DanmuDispatchOption.GetJsonById;
+        
+        [DataMember(Name="keyword")]
+        public string Keyword { get; set; } = string.Empty;
     }
 
     public class DanmuController : BaseApiService
@@ -51,9 +61,7 @@ namespace Emby.Plugin.Danmu.Core.Controllers
             MediaBrowser.Model.IO.IFileSystem fileSystem,
             ILogManager logManager,
             LibraryManagerEventsHelper libraryManagerEventsHelper,
-            ILibraryManager libraryManager,
-            // ScraperManager scraperManager, 
-            IJsonSerializer jsonSerializer)
+            ILibraryManager libraryManager)
         {
             
             _fileSystem = fileSystem;
@@ -62,62 +70,145 @@ namespace Emby.Plugin.Danmu.Core.Controllers
             _libraryManagerEventsHelper = libraryManagerEventsHelper;
             _scraperManager = SingletonManager.ScraperManager;
             _jsonSerializer = SingletonManager.JsonSerializer;
-            
-            _logger.Info("libraryManagerEventsHelper={0}", libraryManagerEventsHelper);
         }
 
         /// <summary>
         /// 获取弹幕文件内容.
         /// </summary>
         /// <returns>xml弹幕文件内容</returns>
-        // [Route("/plugin/danmu/{id}", "get")]
-        [Route("/api/danmu/{id}", "get")]
         public async Task<object> Get(DanmuParams danmuParams)
         {
-            _logger.Info("AbsoluteUri={0}, RawUrl={1}", Request.AbsoluteUri, Request.RawUrl);
-            if (Request.RawUrl.StartsWith("/emby/api/danmu/search"))
+            // 获取json格式弹幕
+            if (DanmuDispatchOption.GetJsonById.Equals(danmuParams.Option))
             {
-                return await SearchDanmu(danmuParams.keyword);
+                return await GetDanmuForJson(danmuParams).ConfigureAwait(false);
             }
-            
-            var id = danmuParams.id;
-            if (string.IsNullOrEmpty(id))
+
+            // 获取支持的站点弹幕信息
+            if (DanmuDispatchOption.GetAllSupportSite.Equals(danmuParams.Option))
             {
-                return new DanmuFileInfo() { Url = "https://www.baidu.com/" };
+                DanmuResultDto result = new DanmuResultDto();
+                List<DanmuSourceDto> sources = new List<DanmuSourceDto>(_scraperManager.All().Count);
+                foreach (AbstractScraper scraper in _scraperManager.All())
+                {
+                    DanmuSourceDto source = new DanmuSourceDto();
+                    source.Source = scraper.ProviderId;
+                    source.SourceName = scraper.ProviderName;
+                    sources.Add(source);
+                }
+                result.Data = sources;
+                return result;
             }
-            
-            // _libraryManager.GetItemById(id);
-            var currentItem = this.GetItemById(_libraryManager, id, null);
+
+            return "暂不支持的操作: " + danmuParams.Option;
+        }
+
+        private async Task<DanmuResultDto> GetDanmuForJson(DanmuParams danmuParams)
+        {
+            var currentItem = _libraryManager.GetItemById(danmuParams.Id);
             if (currentItem == null)
             {
-                return new DanmuFileInfo();
+                return new DanmuResultDto();
             }
-            _logger.Info("currentItem={0}", currentItem.ToJson());
 
-            var danmuPath = Path.Combine(currentItem.ContainingFolderPath,
-                currentItem.FileNameWithoutExtension + ".xml");
+            List<string> sites = danmuParams.NeedSites;
+            DanmuResultDto danmuResultDto = new DanmuResultDto();
+            if (sites == null || danmuParams.NeedSites.Count == 0)
+            {
+                var count = _scraperManager.All().Count;
+                if (count == 0)
+                {
+                    return danmuResultDto;
+                }
+
+                sites = _scraperManager
+                    .All()
+                    .Select(s => s.ProviderId)
+                    .ToList();
+            }
+            
+            List<DanmuSourceDto> danmuSources= new List<DanmuSourceDto>(sites.Count);
+            List<Task<DanmuSourceDto>> danmuSourceTasks= new List<Task<DanmuSourceDto>>(sites.Count);
+            danmuResultDto.Data = danmuSources;
+            
+            foreach (string site in sites)
+            {
+                if (site == null)
+                {
+                    continue;
+                }
+                
+                Task<DanmuSourceDto> danmuSourceTask = GetDanmuSourceDto(currentItem, site);
+                danmuSourceTasks.Add(danmuSourceTask);
+            }
+            
+            await Task.WhenAll(danmuSourceTasks).ConfigureAwait(false);
+            foreach(Task<DanmuSourceDto> danmuSourceTask in danmuSourceTasks) 
+            {
+                var danmuSourceDto = danmuSourceTask.GetAwaiter().GetResult();
+                _logger.Info("danmuSourceDto={0}", danmuSourceDto);
+                if (danmuResultDto != null)
+                {
+                    danmuSources.Add(danmuSourceDto);       
+                }
+            }
+            
+            _logger.Info("任务添加完成 准备输出 danmuResultDto={0}", danmuResultDto.ToJson());
+            return danmuResultDto;
+        }
+
+        private Task<DanmuSourceDto> GetDanmuSourceDto(BaseItem currentItem, string site)
+        {
+            var danmuPath = Path.Combine(currentItem.ContainingFolderPath, currentItem.FileNameWithoutExtension + "_" + site + ".xml");
+            _logger.Info("弹幕文件路径 danmuPath={0}", danmuPath);
             var fileMeta = _fileSystem.GetFileInfo(danmuPath);
             if (!fileMeta.Exists)
             {
-                return new DanmuFileInfo();
+                return Task.FromResult<DanmuSourceDto>(null);
             }
-            
-            // var domain = Request.Scheme + System.Uri.SchemeDelimiter + Request.Host;
-            var danmuFileInfo = new DanmuFileInfo() { Url = string.Format("{0}/api/danmu/{1}/raw", "domain", "id") };
 
-            var serializeToString = _jsonSerializer.SerializeToString(danmuFileInfo);
+            var xmlDocument = new XmlDocument();
+            xmlDocument.Load(danmuPath);
+            XmlElement xmlNode = xmlDocument.DocumentElement;
+            if (xmlNode == null)
+            {
+                return Task.FromResult<DanmuSourceDto>(null);
+            }
+            DanmuSourceDto danmuSourceDto = new DanmuSourceDto();
+            List<DanmuEventDTO> danmuEventDtos = new List<DanmuEventDTO>();
+            foreach (XmlNode node in xmlNode.ChildNodes) //4.遍历根节点（根节点包含所有节点）
+            {
+                // _logger.Info("XmlNode.InnerText={0}", node.InnerText);
+                if ("sourceprovider".Equals(node.Name))
+                {
+                    danmuSourceDto.Source = node.InnerText;
+                }
+                else if ("datasize".Equals(node.Name) && danmuEventDtos.Count == 0)
+                {
+                    danmuEventDtos = new List<DanmuEventDTO>(int.Parse(node.InnerText));
+                }
+                else if ("d".Equals(node.Name) && node is XmlElement)
+                {
+                    DanmuEventDTO danmuEvent = new DanmuEventDTO();
+                    danmuEvent.M = node.InnerText;
+                    danmuEvent.P = ((XmlElement)node).GetAttribute("p");
+                    danmuEventDtos.Add(danmuEvent);
+                }
+            }
 
-            _logger.Info("danmuFileInfo={0}, {1}", danmuFileInfo, serializeToString);
-            return "test";
+            if (danmuSourceDto.Source == null)
+            {
+                return Task.FromResult<DanmuSourceDto>(null);
+            }
+
+            danmuSourceDto.DanmuEvents = danmuEventDtos;
+            return Task.FromResult(danmuSourceDto);
         }
 
-        // /// <summary>
-        // /// 获取弹幕文件内容.
-        // /// </summary>
-        // /// <returns>xml弹幕文件内容</returns>
-        // [Route("/plugin/danmu/raw/{id}")]
-        // [Route("/api/danmu/{id}/raw")]
-        // [HttpGet]
+        /// <summary>
+        /// 获取弹幕文件内容.
+        /// </summary>
+        /// <returns>xml弹幕文件内容</returns>
         // public async Task<ActionResult> Download(string id)
         // {
         //     if (string.IsNullOrEmpty(id))

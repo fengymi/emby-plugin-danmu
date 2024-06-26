@@ -28,7 +28,7 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
 
         public override bool DefaultEnable => true;
 
-        public override string Name => "弹弹play";
+        public override string Name => ScraperProviderName;
 
         public override string ProviderName => ScraperProviderName;
 
@@ -191,6 +191,7 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
             var danmaku = new ScraperDanmaku();
             danmaku.ChatId = cid;
             danmaku.ChatServer = "api.dandanplay.net";
+            danmaku.ProviderId = ScraperProviderId;
             foreach (var comment in comments)
             {
                 var danmakuText = new ScraperDanmakuText();
@@ -205,6 +206,7 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
                 danmaku.Items.Add(danmakuText);
             }
 
+            danmaku.DataSize = danmaku.Items.Count;
             return danmaku;
         }
 

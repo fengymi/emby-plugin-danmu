@@ -14,6 +14,10 @@ namespace Emby.Plugin.Danmu.Scraper.Entity
     {
         [XmlElement("chatid")] public long ChatId { get; set; } = 0;
         [XmlElement("chatserver")] public string ChatServer { get; set; } = "chat.bilibili.com";
+        
+        [XmlElement("sourceprovider")] public string ProviderId { get; set; } = "DandanID";
+        
+        [XmlElement("datasize")] public int DataSize { get; set; } = 0;
 
         [XmlElement("mission")] public long Mission { get; set; } = 0;
 
@@ -119,8 +123,7 @@ namespace Emby.Plugin.Danmu.Scraper.Entity
             // <d p="944.95400,5,25,16707842,1657598634,0,ece5c9d1,1094775706690331648,11">今天的风儿甚是喧嚣</d>
             // time, mode, size, color, create, pool, sender, id, weight(屏蔽等级)
             var time = (Convert.ToDouble(Progress) / 1000).ToString("F05");
-            var attr = string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8}", time, Mode, Fontsize, Color, Ctime, Pool,
-                MidHash, Id, Weight);
+            var attr = string.Format("{0},{1},{2},{3},{4},{5},{6},{7},{8}", time, Mode, Fontsize, Color, Ctime, Pool, MidHash, Id, Weight);
             writer.WriteAttributeString("p", attr);
             if (IsValidXmlString(Content))
             {

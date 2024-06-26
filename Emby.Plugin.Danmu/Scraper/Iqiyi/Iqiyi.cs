@@ -26,7 +26,7 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
 
         public override bool DefaultEnable => true;
 
-        public override string Name => "爱奇艺";
+        public override string Name => ScraperProviderName;
 
         public override string ProviderName => ScraperProviderName;
 
@@ -172,6 +172,7 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
             var danmaku = new ScraperDanmaku();
             danmaku.ChatId = commentId.ToLong();
             danmaku.ChatServer = "cmts.iqiyi.com";
+            danmaku.ProviderId = ProviderId;
             foreach (var comment in comments)
             {
                 try
@@ -193,7 +194,8 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
                 {
                 }
             }
-
+            
+            danmaku.DataSize = danmaku.Items.Count;
             return danmaku;
         }
 

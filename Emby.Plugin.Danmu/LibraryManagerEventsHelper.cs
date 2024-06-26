@@ -335,12 +335,9 @@ namespace Emby.Plugin.Danmu
                 return;
             }
 
-            _logger.LogDebug("Processing {Count} movies with event type {EventType}", events.Count, eventType);
-
             var movies = new HashSet<Movie>(events
                 .Select(lev => lev.Item as Movie) // 显式进行类型转换
                 .Where(lev => lev != null && !string.IsNullOrEmpty(lev.Name))); // 确保movie 不是 null 之后再检查 Name 属性
-
 
             // 新增事件也会触发update，不需要处理Add
             // 更新，判断是否有bvid，有的话刷新弹幕文件
@@ -379,7 +376,6 @@ namespace Emby.Plugin.Danmu
 
                                 // 下载弹幕
                                 await this.DownloadDanmu(scraper, item, commentId).ConfigureAwait(false);
-                                break;
                             }
                         }
                         catch (FrequentlyRequestException ex)
@@ -757,8 +753,6 @@ namespace Emby.Plugin.Danmu
                                 // 下载弹幕xml文件
                                 await this.DownloadDanmu(scraper, item, episode.CommentId).ConfigureAwait(false);
                             }
-
-                            break;
                         }
                         catch (FrequentlyRequestException ex)
                         {
@@ -902,8 +896,6 @@ namespace Emby.Plugin.Danmu
                 var danmaku = await scraper.GetDanmuContent(item, commentId);
                 if (danmaku != null)
                 {
-                    _logger.Info("查询弹幕结果 danmaku={0}", danmaku.ToJson());
-                    
                     var bytes = danmaku.ToXml();
                     if (bytes.Length < 1024)
                     {
@@ -912,7 +904,7 @@ namespace Emby.Plugin.Danmu
                         return;
                     }
 
-                    await this.SaveDanmu(item, bytes);
+                    await this.SaveDanmu(scraper, item, bytes);
                     this._logger.LogInformation("[{0}]弹幕下载成功：name={1}.{2} commentId={3}", scraper.Name,
                         item.IndexNumber ?? 1, item.Name, commentId);
                 }
@@ -945,13 +937,13 @@ namespace Emby.Plugin.Danmu
             return diff.TotalSeconds < 300;
         }
 
-        private async Task SaveDanmu(BaseItem item, byte[] bytes)
+        private async Task SaveDanmu(AbstractScraper scraper, BaseItem item, byte[] bytes)
         {
             // 单元测试时为null
             if (item.FileNameWithoutExtension == null) return;
 
             // 下载弹幕xml文件
-            var danmuPath = Path.Combine(item.ContainingFolderPath, item.FileNameWithoutExtension + ".xml");
+            var danmuPath = Path.Combine(item.ContainingFolderPath, item.FileNameWithoutExtension + "_" + scraper.ProviderId + ".xml");
             await this._fileSystem.WriteAllBytesAsync(danmuPath, bytes, CancellationToken.None).ConfigureAwait(false);
 
             if (this.Config.ToAss && bytes.Length > 0)

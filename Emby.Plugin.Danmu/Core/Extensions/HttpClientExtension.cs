@@ -33,7 +33,6 @@ namespace Emby.Plugin.Danmu.Core.Extensions
             if (resultGetter != null)
             {
                 string content = resultGetter.Invoke(response);
-                Logger.Info("content = {0}", content);
                 return JsonSerializer.DeserializeFromString<T>(content);
             }
             return JsonSerializer.DeserializeFromStream<T>(response.Content);
@@ -42,8 +41,9 @@ namespace Emby.Plugin.Danmu.Core.Extensions
         public static async Task<T> GetSelfResultAsyncWithError<T>(this IHttpClient httpClient, HttpRequestOptions httpRequestOptions, Func<HttpResponseInfo, string>? resultGetter=null, string method="GET", object postData=null)
         {
             var response = await GetSelfResponse(httpClient, httpRequestOptions, method, postData);
-            if (response.StatusCode != HttpStatusCode.OK)
+            if (!(response.StatusCode >= HttpStatusCode.OK && response.StatusCode <= (HttpStatusCode)299))
             {
+                Logger.Info("请求http异常, httpRequestOptions={0}, status={1}", httpRequestOptions.ToString(), response.StatusCode);
                 throw new HttpRequestException("请求异常 code=" + response.StatusCode);
             }
 
