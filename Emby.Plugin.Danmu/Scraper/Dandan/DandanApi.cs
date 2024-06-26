@@ -81,7 +81,6 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
 
             // var result = await response.Content.ReadFromJsonAsync<SearchResult>();
             SearchResult result = _jsonSerializer.DeserializeFromStream<SearchResult>(response.Content);
-            _logger.Info("result={0}", result.ToJson());
             if (result != null && result.Success)
             {
                 _memoryCache.Set<List<Anime>>(cacheKey, result.Animes, expiredOption);

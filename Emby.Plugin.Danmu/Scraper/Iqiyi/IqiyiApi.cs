@@ -141,9 +141,7 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
                 using (var reader = new StreamReader(responseStream, Encoding.UTF8))
                 {
                     var htmlResult = reader.ReadToEnd();
-                    _logger.Info("读取爱奇艺数据结果 htmlResult={0}", htmlResult);
                     var videoJson = regVideoInfo.FirstMatchGroup(htmlResult);
-                    _logger.Info("读取爱奇艺数据结果 videoJson={0}", htmlResult);
                     return videoJson;
                 }
             }

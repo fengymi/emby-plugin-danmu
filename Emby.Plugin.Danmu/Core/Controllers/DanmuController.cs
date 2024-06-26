@@ -146,8 +146,7 @@ namespace Emby.Plugin.Danmu.Core.Controllers
             foreach(Task<DanmuSourceDto> danmuSourceTask in danmuSourceTasks) 
             {
                 var danmuSourceDto = danmuSourceTask.GetAwaiter().GetResult();
-                _logger.Info("danmuSourceDto={0}", danmuSourceDto);
-                if (danmuResultDto != null)
+                if (danmuResultDto != null && danmuSourceDto.Source != null)
                 {
                     danmuSources.Add(danmuSourceDto);       
                 }

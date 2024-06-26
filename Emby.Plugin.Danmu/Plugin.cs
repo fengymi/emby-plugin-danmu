@@ -63,6 +63,7 @@ namespace Emby.Plugin.Danmu
             Instance = this;
             Scrapers = applicationHost.GetExports<AbstractScraper>(false)
                 .Where(o => o != null)
+                // .Where(o => Iqiyi.ScraperProviderId.Equals(o.ProviderId))
                 .OrderBy(x => x.DefaultOrder)
                 .ToList()
                 .AsReadOnly();

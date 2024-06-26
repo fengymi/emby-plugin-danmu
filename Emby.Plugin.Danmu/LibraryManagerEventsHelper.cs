@@ -353,7 +353,6 @@ namespace Emby.Plugin.Danmu
                             // 读取最新数据，要不然取不到年份信息
                             var currentItem = _libraryManager.GetItemById(item.InternalId) ?? item;
                             var mediaId = await scraper.SearchMediaId(currentItem);
-                            _logger.Info("查询弹幕id mediaId={0}", mediaId);
                             if (string.IsNullOrEmpty(mediaId))
                             {
                                 _logger.LogInformation("[{0}]匹配失败：{1} ({2})", scraper.Name, item.Name,
@@ -516,7 +515,6 @@ namespace Emby.Plugin.Danmu
         public async Task ProcessQueuedSeasonEvents(IReadOnlyCollection<LibraryEvent> events, EventType eventType)
         {
             
-            _logger.Info("ProcessQueuedSeasonEvents 收到数据events={0}, eventType={1}", events.ToJson(), eventType.ToJson());
             if (events.Count == 0)
             {
                 return;
@@ -944,7 +942,15 @@ namespace Emby.Plugin.Danmu
 
             // 下载弹幕xml文件
             var danmuPath = Path.Combine(item.ContainingFolderPath, item.FileNameWithoutExtension + "_" + scraper.ProviderId + ".xml");
-            await this._fileSystem.WriteAllBytesAsync(danmuPath, bytes, CancellationToken.None).ConfigureAwait(false);
+            try
+            {
+                await this._fileSystem.WriteAllBytesAsync(danmuPath, bytes, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                _logger.ErrorException("文件写入异常 danmuPath={0}", e, danmuPath);
+                throw;
+            }
 
             if (this.Config.ToAss && bytes.Length > 0)
             {

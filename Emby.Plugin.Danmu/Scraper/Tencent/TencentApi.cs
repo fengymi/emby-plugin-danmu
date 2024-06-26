@@ -92,7 +92,6 @@ namespace Emby.Plugin.Danmu.Scraper.Tencent
                 }
             }
 
-            _logger.Info("匹配的视频信息 result={0}", result.ToJson());
             _memoryCache.Set<List<TencentVideo>>(cacheKey, result, expiredOption);
             return result;
         }

@@ -76,7 +76,6 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
             var animes = await this._api.SearchAsync(searchName, CancellationToken.None).ConfigureAwait(false);
             foreach (var anime in animes)
             {
-                log.Info("anime = {0}, item={1}", anime.ToJson(), item.ToJson());
                 var animeId = anime.AnimeId;
                 var title = anime.AnimeTitle;
                 var pubYear = anime.Year;
@@ -107,7 +106,6 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
                     continue;
                 }
                 
-                log.Info("anime = {0}, animeId={1}", $"{animeId}", animeId);
                 return $"{animeId}";
             }
 
