@@ -7,9 +7,11 @@
     </PropertyGroup>
     <ItemGroup>
         <None Remove="ThumbImage.png"/>
+        <None Remove="Scraper\Bilibili\**" />
     </ItemGroup>
     <ItemGroup>
         <EmbeddedResource Include="ThumbImage.png"/>
+        <EmbeddedResource Remove="Scraper\Bilibili\**" />
     </ItemGroup>
     <ItemGroup>
         <PackageReference Include="ComposableAsync.Core" Version="1.3.0" />
@@ -30,5 +32,8 @@
     <ItemGroup>
         <None Remove="Configuration/configPage.html"/>
         <EmbeddedResource Include="Configuration/configPage.html"/>
+    </ItemGroup>
+    <ItemGroup>
+      <Compile Remove="Scraper\Bilibili\**" />
     </ItemGroup>
 </Project>
