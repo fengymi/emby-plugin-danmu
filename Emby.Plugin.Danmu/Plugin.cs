@@ -1,13 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Globalization;
 using System.Linq;
 using Emby.Plugin.Danmu.Configuration;
 using Emby.Plugin.Danmu.Core.Extensions;
 using Emby.Plugin.Danmu.Core.Singleton;
 using Emby.Plugin.Danmu.Scraper;
-using Emby.Plugin.Danmu.Scraper.Iqiyi;
-using Emby.Plugin.Danmu.Scraper.Tencent;
 using MediaBrowser.Common.Configuration;
 using MediaBrowser.Common.Net;
 using MediaBrowser.Model.Plugins;
@@ -57,8 +54,9 @@ namespace Emby.Plugin.Danmu
             SingletonManager.JsonSerializer = jsonSerializer;
             SingletonManager.HttpClient = httpClient;
             SingletonManager.LogManager = logManager;
+            SingletonManager.applicationHost = applicationHost;
             SingletonManager.LibraryManagerEventsHelper = applicationHost.Resolve<LibraryManagerEventsHelper>();
-            
+
             logger = logManager.getDefaultLogger();
             Instance = this;
             Scrapers = applicationHost.GetExports<AbstractScraper>(false)
@@ -85,12 +83,7 @@ namespace Emby.Plugin.Danmu
         public Stream GetThumbImage()
         {
             var type = this.GetType();
-            return type.Assembly.GetManifestResourceStream(type.Namespace + ".ThumbImage.png");
-        }
-
-        protected void OnOptionsSaved(PluginConfiguration options)
-        {
-            this.logger.Info("My plugin ({0}) options have been updated. ({1})", this.Name, options);
+            return type.Assembly.GetManifestResourceStream(type.Namespace + ".Configuration.logo.png");
         }
         
         /// <summary>
@@ -98,36 +91,25 @@ namespace Emby.Plugin.Danmu
         /// </summary>
         public ReadOnlyCollection<AbstractScraper> Scrapers { get; }
         
-        /// <inheritdoc />
         public IEnumerable<PluginPageInfo> GetPages()
         {
             return new[]
             {
                 new PluginPageInfo
                 {
-                    Name = this.Name,
-                    EmbeddedResourcePath = string.Format(CultureInfo.InvariantCulture, "{0}.Configuration.configPage.html", GetType().Namespace)
+                    Name = "danmu",
+                    DisplayName = "弹幕配置",
+                    MenuIcon = "closed_caption",
+                    MenuSection = "server",
+                    EnableInMainMenu = true,
+                    EmbeddedResourcePath = GetType().Namespace + ".Configuration.configPage.html",
+                },
+                new PluginPageInfo
+                {
+                    Name = "danmuJs",
+                    EmbeddedResourcePath = GetType().Namespace + ".Configuration.config.js"
                 }
             };
         }
-        
-        // public IEnumerable<PluginPageInfo> GetPages()
-        // {
-        //     return new[]
-        //     {
-        //         new PluginPageInfo
-        //         {
-        //             Name = "fanart",
-        //             EmbeddedResourcePath = GetType().Namespace + ".Configuration.fanart.html",
-        //             MenuSection = "server",
-        //             MenuIcon = "photo"
-        //         },
-        //         new PluginPageInfo
-        //         {
-        //             Name = "fanartjs",
-        //             EmbeddedResourcePath = GetType().Namespace + ".Configuration.fanart.js"
-        //         }
-        //     };
-        // }
     }
 }

@@ -375,6 +375,10 @@ namespace Emby.Plugin.Danmu
 
                                 // 下载弹幕
                                 await this.DownloadDanmu(scraper, item, commentId).ConfigureAwait(false);
+                                if (!Config.OpenAllSource)
+                                {
+                                    break;
+                                }
                             }
                         }
                         catch (FrequentlyRequestException ex)
@@ -981,7 +985,7 @@ namespace Emby.Plugin.Danmu
                     assConfig.TuneDuration = this.Config.AssSpeed.Trim().ToInt() - 8;
                 }
 
-                var assPath = Path.Combine(item.ContainingFolderPath, item.FileNameWithoutExtension + ".danmu.ass");
+                var assPath = Path.Combine(item.ContainingFolderPath, item.FileNameWithoutExtension + "_" + scraper.ProviderId + ".danmu.ass");
                 Danmaku2Ass.Bilibili.GetInstance().Create(bytes, assConfig, assPath);
             }
         }

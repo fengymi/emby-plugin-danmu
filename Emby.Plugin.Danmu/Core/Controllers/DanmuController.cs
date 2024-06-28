@@ -13,8 +13,12 @@ using Emby.Plugin.Danmu.Core.Extensions;
 using Emby.Plugin.Danmu.Core.Singleton;
 using Emby.Plugin.Danmu.Model;
 using Emby.Plugin.Danmu.Scraper;
+using MediaBrowser.Common.Extensions;
 using MediaBrowser.Controller.Api;
+using MediaBrowser.Controller.Dto;
 using MediaBrowser.Controller.Entities;
+using MediaBrowser.Controller.Entities.Movies;
+using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.MediaInfo;
@@ -82,6 +86,11 @@ namespace Emby.Plugin.Danmu.Core.Controllers
             if (DanmuDispatchOption.GetJsonById.Equals(danmuParams.Option))
             {
                 return await GetDanmuForJson(danmuParams).ConfigureAwait(false);
+            }
+
+            if (DanmuDispatchOption.Refresh.Equals(danmuParams.Option))
+            {
+                return await Refresh(danmuParams.Id);
             }
 
             // 获取支持的站点弹幕信息
@@ -439,42 +448,40 @@ namespace Emby.Plugin.Danmu.Core.Controllers
         // }
         //
         //
-        // /// <summary>
-        // /// 重新获取对应的弹幕id.
-        // /// </summary>
-        // /// <returns>请求结果</returns>
-        // [Route("")]
-        // [HttpGet]
-        // public async Task<String> Refresh(string id)
-        // {
-        //     if (string.IsNullOrEmpty(id))
-        //     {
-        //         throw new ResourceNotFoundException();
-        //     }
-        //
-        //     var item = _libraryManager.GetItemById(id);
-        //     if (item == null)
-        //     {
-        //         throw new ResourceNotFoundException();
-        //     }
-        //
-        //     if (item is Movie || item is Season)
-        //     {
-        //         _libraryManagerEventsHelper.QueueItem(item, Model.EventType.Add);
-        //         _libraryManagerEventsHelper.QueueItem(item, Model.EventType.Update);
-        //     }
-        //
-        //     if (item is Series)
-        //     {
-        //         var seasons = ((Series)item).GetSeasons(null, new DtoOptions(false));
-        //         foreach (var season in seasons)
-        //         {
-        //             _libraryManagerEventsHelper.QueueItem(season, Model.EventType.Add);
-        //             _libraryManagerEventsHelper.QueueItem(season, Model.EventType.Update);
-        //         }
-        //     }
-        //
-        //     return "ok";
-        // }
+        /// <summary>
+        /// 重新获取对应的弹幕id.
+        /// </summary>
+        /// <returns>请求结果</returns>
+        public async Task<String> Refresh(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                throw new ResourceNotFoundException();
+            }
+        
+            var item = _libraryManager.GetItemById(id);
+            if (item == null)
+            {
+                throw new ResourceNotFoundException();
+            }
+        
+            if (item is Movie || item is Season)
+            {
+                _libraryManagerEventsHelper.QueueItem(item, Model.EventType.Add);
+                _libraryManagerEventsHelper.QueueItem(item, Model.EventType.Update);
+            }
+        
+            if (item is Series)
+            {
+                var seasons = ((Series)item).GetSeasons(null, new DtoOptions(false));
+                foreach (var season in seasons)
+                {
+                    _libraryManagerEventsHelper.QueueItem(season, Model.EventType.Add);
+                    _libraryManagerEventsHelper.QueueItem(season, Model.EventType.Update);
+                }
+            }
+        
+            return "ok";
+        }
     }
 }

@@ -1,3 +1,4 @@
+## 类型说明
 Movie 代表一部电影，通常是单一的媒体项目
 Episode 代表一个电视剧的单个集
 Series（电视系列）：一组按顺序组织起来的电视剧集，对应一个电视节目或网络系列剧。
@@ -14,3 +15,7 @@ Trailer（预告片）
 LiveTV（实时电视）
 Channel（频道）
 Playlist（播放列表）
+
+
+## 请求测试url
+http://localhost:8096/emby/api/danmu/17?option=GetJsonById&X-Emby-Token=aa13a23774314e35a79688322954d9cf
