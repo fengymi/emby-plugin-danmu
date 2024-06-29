@@ -4,7 +4,7 @@ define(
         'use strict';
 
         function View() {
-            // BaseView.apply(this, arguments);
+            BaseView.apply(this, arguments);
 
             var TemplateConfig = {
                 pluginUniqueId: 'cdbc5624-3ea9-4f9d-94cc-3be20585f926'
@@ -40,9 +40,9 @@ define(
                 });
             }
 
-            function onLoad() {
+            function loadConfiguration() {
                 Dashboard.showLoadingMsg();
-                ApiClient.getPluginConfiguration(TemplateConfig.pluginUniqueId).then(function (config) {
+                return ApiClient.getPluginConfiguration(TemplateConfig.pluginUniqueId).then(function (config) {
                     container.querySelector('#current_version').textContent = "v" + config.Version;
 
                     container.querySelector('#ToAss').checked = config.ToAss;
@@ -90,6 +90,16 @@ define(
                 });
             }
 
+            function wrapLoading(promise) {
+                Dashboard.showLoadingMsg();
+                promise.then(Dashboard.hideLoadingMsg, Dashboard.hideLoadingMsg);
+            }
+            
+            function onLoad() {
+                wrapLoading(Promise.all([
+                    loadConfiguration(),
+                ]));
+            }
             container.addEventListener('viewshow', onLoad);
 
             container.querySelector('#TemplateConfigForm')

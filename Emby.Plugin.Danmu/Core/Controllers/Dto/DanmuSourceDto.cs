@@ -8,6 +8,8 @@ namespace Emby.Plugin.Danmu.Core.Controllers.Dto
         [DataMember(Name="source")] public string Source { get; set; }
         
         [DataMember(Name="sourceName")] public string SourceName { get; set; }
+        
+        [DataMember(Name="opened")] public bool Opened { get; set; }
 
         /**
          * 

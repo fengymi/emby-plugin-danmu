@@ -36,7 +36,7 @@ namespace Emby.Plugin.Danmu.Core.Controllers
         public string Id { get; set; } = string.Empty;
         
         [DataMember(Name="needSites")]
-        public List<string> NeedSites = new List<string>();
+        public List<string> NeedSites { get; set; } = new List<string>();
         
         [DataMember(Name="option")]
         public string Option { get; set; } = DanmuDispatchOption.GetJsonById;
@@ -80,8 +80,9 @@ namespace Emby.Plugin.Danmu.Core.Controllers
         /// 获取弹幕文件内容.
         /// </summary>
         /// <returns>xml弹幕文件内容</returns>
-        public async Task<object> Get(DanmuParams danmuParams)
+        public async Task<object> Any(DanmuParams danmuParams)
         {
+            _logger.Info("当前请求信息 danmuParams={0}", danmuParams.ToJson());
             // 获取json格式弹幕
             if (DanmuDispatchOption.GetJsonById.Equals(danmuParams.Option))
             {
@@ -97,12 +98,14 @@ namespace Emby.Plugin.Danmu.Core.Controllers
             if (DanmuDispatchOption.GetAllSupportSite.Equals(danmuParams.Option))
             {
                 DanmuResultDto result = new DanmuResultDto();
-                List<DanmuSourceDto> sources = new List<DanmuSourceDto>(_scraperManager.All().Count);
-                foreach (AbstractScraper scraper in _scraperManager.All())
+                var allWithNoEnabled = _scraperManager.AllWithNoEnabled();
+                List<DanmuSourceDto> sources = new List<DanmuSourceDto>(allWithNoEnabled.Count);
+                foreach (AbstractScraper scraper in allWithNoEnabled)
                 {
                     DanmuSourceDto source = new DanmuSourceDto();
                     source.Source = scraper.ProviderId;
                     source.SourceName = scraper.ProviderName;
+                    source.Opened = scraper.DefaultEnable;
                     sources.Add(source);
                 }
                 result.Data = sources;
@@ -122,7 +125,7 @@ namespace Emby.Plugin.Danmu.Core.Controllers
 
             List<string> sites = danmuParams.NeedSites;
             DanmuResultDto danmuResultDto = new DanmuResultDto();
-            if (sites == null || danmuParams.NeedSites.Count == 0)
+            if (sites == null || sites.Count == 0)
             {
                 var count = _scraperManager.All().Count;
                 if (count == 0)
@@ -155,7 +158,7 @@ namespace Emby.Plugin.Danmu.Core.Controllers
             foreach(Task<DanmuSourceDto> danmuSourceTask in danmuSourceTasks) 
             {
                 var danmuSourceDto = danmuSourceTask.GetAwaiter().GetResult();
-                if (danmuResultDto != null && danmuSourceDto.Source != null)
+                if (danmuSourceDto != null && danmuSourceDto.Source != null)
                 {
                     danmuSources.Add(danmuSourceDto);       
                 }
@@ -452,7 +455,7 @@ namespace Emby.Plugin.Danmu.Core.Controllers
         /// 重新获取对应的弹幕id.
         /// </summary>
         /// <returns>请求结果</returns>
-        public async Task<String> Refresh(string id)
+        public Task<String> Refresh(string id)
         {
             if (string.IsNullOrEmpty(id))
             {
@@ -481,7 +484,7 @@ namespace Emby.Plugin.Danmu.Core.Controllers
                 }
             }
         
-            return "ok";
+            return Task.FromResult("ok");
         }
     }
 }
