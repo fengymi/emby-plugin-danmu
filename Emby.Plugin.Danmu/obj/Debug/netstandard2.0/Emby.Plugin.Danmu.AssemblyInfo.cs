@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyDescriptionAttribute("弹幕插件")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+032c1344f3523bdca874e8cf7527b39d4dec7995")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4dfafe9fab2c8ff9124040c1f39705184d163ea2")]
 [assembly: System.Reflection.AssemblyProductAttribute("Emby.Plugin.Danmu")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Emby.Plugin.Danmu")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
