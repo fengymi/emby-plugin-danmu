@@ -14,8 +14,13 @@ namespace Emby.Plugin.Danmu.Core.Extensions
             {
                 DtoOptions = options
             };
+
+            BaseItem[] baseItems = series.GetItemList(query);
+            List<BaseItem> items = new List<BaseItem>(baseItems.Count());
+            items.AddRange(baseItems);
+            return items;
             // this.SetSeasonQueryOptions(query, user);
-            return BaseItem.LibraryManager.GetItemList(query).ToList();
+            // return BaseItem.LibraryManager.GetItemList(query).ToList();
         }
     }
 }

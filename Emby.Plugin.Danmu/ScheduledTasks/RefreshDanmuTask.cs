@@ -18,7 +18,7 @@ using MediaBrowser.Model.Tasks;
 
 namespace Emby.Plugin.Danmu.ScheduledTasks
 {
-    public class RefreshDanmuTask : IScheduledTask
+    public class RefreshDanmuTask : AbstractDanmuTask
     {
         private readonly ILibraryManager _libraryManager;
         private readonly ScraperManager _scraperManager;
@@ -26,13 +26,13 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
         private readonly LibraryManagerEventsHelper _libraryManagerEventsHelper;
 
 
-        public string Key => $"{Plugin.Instance.Name}RefreshDanmu";
+        public override string Key => $"{Plugin.Instance.Name}RefreshDanmu";
 
-        public string Name => "更新弹幕文件";
+        public override string Name => "更新弹幕文件";
 
-        public string Description => $"根据视频元数据下载最新的弹幕文件。";
+        public override string Description => $"根据视频元数据下载最新的弹幕文件。";
 
-        public string Category => Plugin.Instance.Name;
+        public override string Category => Plugin.Instance.Name;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="RefreshDanmuTask"/> class.
@@ -48,7 +48,7 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
             // _libraryManagerEventsHelper = SingletonManager.LibraryManagerEventsHelper;
         }
 
-        public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()
+        public override IEnumerable<TaskTriggerInfo> GetDefaultTriggers()
         {
             return new List<TaskTriggerInfo>();
             // yield return new TaskTriggerInfo
@@ -59,11 +59,13 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
             // };
         }
 
-        public async Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
+        public override async Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
         {
             await Task.Yield();
 
             progress?.Report(0);
+            
+            _logger.Info("刷新任务开始");
 
             var scrapers = this._scraperManager.All();
             var items = _libraryManager.GetItemList(new InternalItemsQuery
@@ -86,7 +88,7 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
                 try
                 {
                     // 没epid元数据的不处理
-                    if (!this.HasAnyScraperProviderId(scrapers, item))
+                    if (!HasAnyScraperProviderId(scrapers, item))
                     {
                         successCount++;
                         continue;
@@ -120,31 +122,6 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
 
             progress?.Report(100);
             _logger.LogInformation("Exectue task completed. success: {0} fail: {1}", successCount, failCount);
-        }
-
-        private bool HasAnyScraperProviderId(ReadOnlyCollection<AbstractScraper> scrapers, BaseItem item)
-        {
-            foreach (var scraper in scrapers)
-            {
-                var providerVal = item.GetProviderId(scraper.ProviderId);
-                if (!string.IsNullOrEmpty(providerVal))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private Dictionary<string, string> GetScraperFilter(ReadOnlyCollection<AbstractScraper> scrapers)
-        {
-            var filter = new Dictionary<string, string>();
-            foreach (var scraper in scrapers)
-            {
-                filter.Add(scraper.ProviderId, string.Empty);
-            }
-
-            return filter;
         }
     }
 }

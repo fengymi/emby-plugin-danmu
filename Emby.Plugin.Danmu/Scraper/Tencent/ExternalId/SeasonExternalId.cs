@@ -16,6 +16,6 @@ namespace Emby.Plugin.Danmu.Scraper.Tencent.ExternalId
         public string UrlFormatString => "https://v.qq.com/x/cover/{0}.html";
 
         /// <inheritdoc />
-        public bool Supports(IHasProviderIds item) => item is Season;
+        public bool Supports(IHasProviderIds item) => item is Season || item is Series;
     }
 }

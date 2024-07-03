@@ -18,7 +18,7 @@ using MediaBrowser.Model.Tasks;
 
 namespace Emby.Plugin.Danmu.ScheduledTasks
 {
-    public class ScanLibraryTask : IScheduledTask
+    public class ScanLibraryTask : AbstractDanmuTask
     {
         private readonly ILibraryManager _libraryManager;
         private readonly ScraperManager _scraperManager;
@@ -26,13 +26,13 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
         private readonly LibraryManagerEventsHelper _libraryManagerEventsHelper;
 
 
-        public string Key => $"{Plugin.Instance.Name}ScanLibrary";
+        public override string Key => $"{Plugin.Instance.Name}ScanLibrary";
 
-        public string Name => "扫描媒体库匹配弹幕";
+        public override string Name => "扫描媒体库匹配弹幕";
 
-        public string Description => $"扫描缺少弹幕的视频，搜索匹配后，再下载对应弹幕文件。";
+        public override string Description => $"扫描缺少弹幕的视频，搜索匹配后，再下载对应弹幕文件。";
 
-        public string Category => Plugin.Instance.Name;
+        public override string Category => Plugin.Instance.Name;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="ScanLibraryTask"/> class.
@@ -56,37 +56,36 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
         //     throw new NotImplementedException();
         // }
 
-        public IEnumerable<TaskTriggerInfo> GetDefaultTriggers()
+        public override IEnumerable<TaskTriggerInfo> GetDefaultTriggers()
         {
             return new List<TaskTriggerInfo>();
         }
 
-        public async Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
+        public override async Task Execute(CancellationToken cancellationToken, IProgress<double> progress)
         {
             await Task.Yield();
             progress?.Report(0);
+            
+            _logger.Info("扫描任务开始");
 
             var scrapers = this._scraperManager.All();
             var items = _libraryManager.GetItemList(new InternalItemsQuery
             {
-                // MediaTypes = new[] { MediaType.Video },
                 ExcludeProviderIds = this.GetScraperFilter(scrapers),
                 IncludeItemTypes = new[] { "Movie", "Season"}
             }).ToList();
 
             var successCount = 0;
             var failCount = 0;
-            
-            int i = 1;
             for (int idx = 0; idx < items.Count; idx++)
             {
-                BaseItem item = items[idx];
                 cancellationToken.ThrowIfCancellationRequested();
+                BaseItem item = items[idx];
                 progress?.Report((double)idx / items.Count * 100);
                 try
                 {
                     // 有epid的忽略处理（不需要再匹配）
-                    if (this.HasAnyScraperProviderId(scrapers, item))
+                    if (HasAnyScraperProviderId(scrapers, item))
                     {
                         successCount++;
                         continue;
@@ -128,31 +127,6 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
 
             progress?.Report(100);
             _logger.LogInformation("Exectue task completed. success: {0} fail: {1}", successCount, failCount);
-        }
-
-        private bool HasAnyScraperProviderId(ReadOnlyCollection<AbstractScraper> scrapers, BaseItem item)
-        {
-            foreach (var scraper in scrapers)
-            {
-                var providerVal = item.GetProviderId(scraper.ProviderId);
-                if (!string.IsNullOrEmpty(providerVal))
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private Dictionary<string, string> GetScraperFilter(ReadOnlyCollection<AbstractScraper> scrapers)
-        {
-            var filter = new Dictionary<string, string>();
-            foreach (var scraper in scrapers)
-            {
-                filter.Add(scraper.ProviderId, string.Empty);
-            }
-
-            return filter;
         }
     }
 }

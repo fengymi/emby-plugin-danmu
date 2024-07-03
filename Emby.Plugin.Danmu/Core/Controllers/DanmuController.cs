@@ -13,6 +13,7 @@ using Emby.Plugin.Danmu.Core.Extensions;
 using Emby.Plugin.Danmu.Core.Singleton;
 using Emby.Plugin.Danmu.Model;
 using Emby.Plugin.Danmu.Scraper;
+using Emby.Plugin.Danmu.Scraper.Tencent;
 using MediaBrowser.Common.Extensions;
 using MediaBrowser.Controller.Api;
 using MediaBrowser.Controller.Dto;
@@ -20,6 +21,7 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
+using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.MediaInfo;
 using MediaBrowser.Model.Serialization;
@@ -470,16 +472,24 @@ namespace Emby.Plugin.Danmu.Core.Controllers
         
             if (item is Movie || item is Season)
             {
+                _logger.Info("Movie {0}, {1}", item.Name, item.GetType());
                 _libraryManagerEventsHelper.QueueItem(item, Model.EventType.Add);
                 _libraryManagerEventsHelper.QueueItem(item, Model.EventType.Update);
+                _libraryManagerEventsHelper.QueueItem(item, Model.EventType.Update);
             }
-        
-            if (item is Series)
+            else if (item is Episode)
+            {
+                _logger.Info("Episode {0}, {1}", item.Name, item.GetType());
+                _libraryManagerEventsHelper.QueueItem(item, Model.EventType.Update);
+            }
+            else if (item is Series)
             {
                 var seasons = ((Series)item).GetSeasons(null, new DtoOptions(false));
                 foreach (var season in seasons)
                 {
+                    _logger.Info("season = {0}, type={1}, Guid.Empty={2}", season.Name, season.GetType(), Guid.Empty.Equals(season.Id));
                     _libraryManagerEventsHelper.QueueItem(season, Model.EventType.Add);
+                    _libraryManagerEventsHelper.QueueItem(season, Model.EventType.Update);
                     _libraryManagerEventsHelper.QueueItem(season, Model.EventType.Update);
                 }
             }
