@@ -157,7 +157,7 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
             var withRelated = this.Config.WithRelatedDanmu ? "true" : "false";
             var chConvert = this.Config.ChConvert;
             var url = $"https://api.dandanplay.net/api/v2/comment/{epId}?withRelated={withRelated}&chConvert={chConvert}";
-            var result = await httpClient.GetSelfResultAsync<CommentResult>(GetDefaaultHttpRequestOptions(url)).ConfigureAwait(false);
+            var result = await httpClient.GetSelfResultAsync<CommentResult>(GetDefaultHttpRequestOptions(url)).ConfigureAwait(false);
             
             if (result != null)
             {

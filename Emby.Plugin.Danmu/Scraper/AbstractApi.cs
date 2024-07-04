@@ -74,14 +74,14 @@ namespace Emby.Plugin.Danmu.Scraper
 
         protected virtual string[] GetDefaultCookies(string? url = null) => null;
 
-        protected HttpRequestOptions GetDefaaultHttpRequestOptions(string url, string? cookies = null,
+        protected HttpRequestOptions GetDefaultHttpRequestOptions(string url, string? cookies = null,
             CancellationToken cancellationToken = default)
         {
             HttpRequestOptions httpRequestOptions = new HttpRequestOptions
             {
                 Url = url,
                 UserAgent = $"{HTTP_USER_AGENT}",
-                TimeoutMs = 30000,
+                TimeoutMs = 300000,
                 EnableHttpCompression = true,
                 RequestContentType = "application/json",
                 AcceptHeader = "application/json",

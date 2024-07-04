@@ -551,7 +551,10 @@ namespace Emby.Plugin.Danmu
 
                             _logger.LogInformation("[{0}]匹配成功：name={1} season_number={2} ProviderId: {3}", scraper.Name,
                                 season.Name, season.IndexNumber, mediaId);
-                            break;
+                            if (!Config.OpenAllSource)
+                            {
+                                break;
+                            }
                         }
                         catch (FrequentlyRequestException ex)
                         {
@@ -606,8 +609,6 @@ namespace Emby.Plugin.Danmu
                             var providerVal = season.GetDanmuProviderId(scraper.ProviderId);
                             if (string.IsNullOrEmpty(providerVal))
                             {
-                                
-                                
                                 continue;   
                             }
 
@@ -659,6 +660,16 @@ namespace Emby.Plugin.Danmu
                                         queueUpdateMeta.Add(episode);
                                     }
 
+                                    var danmuXmlPath = Path.Combine(episode.ContainingFolderPath, episode.GetDanmuXmlPath(scraper.ProviderId));
+                                    var lastWriteTime = this._fileSystem.GetLastWriteTime(danmuXmlPath);
+                                    var diff = DateTime.Now - lastWriteTime;
+                                    if (diff.TotalSeconds < 3600)
+                                    {
+                                        // 
+                                        _logger.Info("{0}弹幕文件在1小时内更新过, 忽略， 弹幕文件={1}", episode.Name, danmuXmlPath);
+                                        continue;
+                                    }
+
                                     // 下载弹幕
                                     await this.DownloadDanmu(scraper, episode, commentId).ConfigureAwait(false);
                                 }
@@ -669,7 +680,10 @@ namespace Emby.Plugin.Danmu
                                 }
                             }
 
-                            break;
+                            if (!Config.OpenAllSource)
+                            {
+                                break;
+                            }
                         }
                         catch (FrequentlyRequestException ex)
                         {
@@ -928,7 +942,7 @@ namespace Emby.Plugin.Danmu
             if (item.FileNameWithoutExtension == null) return;
 
             // 下载弹幕xml文件
-            var danmuPath = Path.Combine(item.ContainingFolderPath, item.FileNameWithoutExtension + "_" + scraper.ProviderId + ".xml");
+            var danmuPath = Path.Combine(item.ContainingFolderPath, item.GetDanmuXmlPath(scraper.ProviderId));
             try
             {
                 await this._fileSystem.WriteAllBytesAsync(danmuPath, bytes, CancellationToken.None).ConfigureAwait(false);

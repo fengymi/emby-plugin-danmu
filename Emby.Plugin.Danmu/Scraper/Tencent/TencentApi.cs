@@ -69,7 +69,7 @@ namespace Emby.Plugin.Danmu.Scraper.Tencent
             var url = $"https://pbaccess.video.qq.com/trpc.videosearch.mobile_search.HttpMobileRecall/MbSearchHttp";
 
             var result = new List<TencentVideo>();
-            var searchResult = await httpClient.GetSelfResultAsyncWithError<TencentSearchResult>(GetDefaaultHttpRequestOptions(url, null, cancellationToken), null, "POST", originPostData);
+            var searchResult = await httpClient.GetSelfResultAsyncWithError<TencentSearchResult>(GetDefaultHttpRequestOptions(url, null, cancellationToken), null, "POST", originPostData);
             
             if (searchResult != null && searchResult.Data != null && searchResult.Data.NormalList != null &&
                 searchResult.Data.NormalList.ItemList != null)
@@ -114,7 +114,7 @@ namespace Emby.Plugin.Danmu.Scraper.Tencent
             var originPostData = new TencentEpisodeListRequest() { PageParams = new TencentPageParams() { Cid = id } };
             var url = $"https://pbaccess.video.qq.com/trpc.universal_backend_service.page_server_rpc.PageServer/GetPageData?video_appid=3000010&vplatform=2";
 
-            var result = await httpClient.GetSelfResultAsyncWithError<TencentEpisodeListResult>(GetDefaaultHttpRequestOptions(url), null, "POST", originPostData).ConfigureAwait(false);
+            var result = await httpClient.GetSelfResultAsyncWithError<TencentEpisodeListResult>(GetDefaultHttpRequestOptions(url), null, "POST", originPostData).ConfigureAwait(false);
             if (result != null && result.Data != null && result.Data.ModuleListDatas != null)
             {
                 var videoInfo = new TencentVideo();
@@ -139,7 +139,7 @@ namespace Emby.Plugin.Danmu.Scraper.Tencent
             }
 
             var url = $"https://dm.video.qq.com/barrage/base/{vid}";
-            var result = await httpClient.GetSelfResultAsyncWithError<TencentCommentResult>(GetDefaaultHttpRequestOptions(url)).ConfigureAwait(false);
+            var result = await httpClient.GetSelfResultAsyncWithError<TencentCommentResult>(GetDefaultHttpRequestOptions(url)).ConfigureAwait(false);
             if (result != null && result.SegmentIndex != null)
             {
                 var start = result.SegmentStart.ToLong();
@@ -150,7 +150,7 @@ namespace Emby.Plugin.Danmu.Scraper.Tencent
                     var segmentUrl = $"https://dm.video.qq.com/barrage/segment/{vid}/{segment.SegmentName}";
 
                     var segmentResult = await httpClient
-                        .GetSelfResultAsyncWithError<TencentCommentSegmentResult>(GetDefaaultHttpRequestOptions(segmentUrl)).ConfigureAwait(false);
+                        .GetSelfResultAsyncWithError<TencentCommentSegmentResult>(GetDefaultHttpRequestOptions(segmentUrl)).ConfigureAwait(false);
                     if (segmentResult != null && segmentResult.BarrageList != null)
                     {
                         // 30秒每segment，为避免弹幕太大，从中间隔抽取最大60秒200条弹幕

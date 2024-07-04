@@ -18,7 +18,12 @@ namespace Emby.Plugin.Danmu.Core.Extensions
             item.UpdateToRepository(ItemUpdateType.MetadataEdit);
             return Task.CompletedTask;
         }
-        
+
+        public static string GetDanmuXmlPath(this BaseItem item, string providerId)
+        {
+            return item.FileNameWithoutExtension + "_" + providerId + ".xml";
+        }
+
         /**
          * 获取弹幕id
          */

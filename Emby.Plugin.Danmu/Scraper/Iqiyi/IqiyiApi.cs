@@ -55,7 +55,7 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
         var url = $"https://search.video.iqiyi.com/o?if=html5&key={keyword}&pageNum=1&pageSize=20";
 
         var result = new List<IqiyiSearchAlbumInfo>();
-        var searchResult = await httpClient.GetSelfResultAsync<IqiyiSearchResult>(GetDefaaultHttpRequestOptions(url), null).ConfigureAwait(false);
+        var searchResult = await httpClient.GetSelfResultAsync<IqiyiSearchResult>(GetDefaultHttpRequestOptions(url), null).ConfigureAwait(false);
         if (searchResult != null && searchResult.Data != null)
         {
             result = searchResult.Data.DocInfos
@@ -130,7 +130,7 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
         await this.LimitRequestFrequently();
 
         var url = $"https://www.iqiyi.com/v_{id}.html";
-        var videoInfo = await httpClient.GetSelfResultAsync<IqiyiHtmlVideoInfo>(GetDefaaultHttpRequestOptions(url, null, cancellationToken), response =>
+        var videoInfo = await httpClient.GetSelfResultAsync<IqiyiHtmlVideoInfo>(GetDefaultHttpRequestOptions(url, null, cancellationToken), response =>
         {
             
             // 确保响应状态码为成功
@@ -189,7 +189,7 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
         // var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
         // response.EnsureSuccessStatusCode();
 
-        var albumResult = await httpClient.GetSelfResultAsyncWithError<IqiyiVideoResult>(GetDefaaultHttpRequestOptions(url), null).ConfigureAwait(false);
+        var albumResult = await httpClient.GetSelfResultAsyncWithError<IqiyiVideoResult>(GetDefaultHttpRequestOptions(url), null).ConfigureAwait(false);
         if (albumResult != null && albumResult.Data != null && albumResult.Data.Epsodelist != null)
         {
             return albumResult.Data.Epsodelist;
@@ -209,7 +209,7 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
         }
 
         var url = $"https://pcw-api.iqiyi.com/album/album/baseinfo/{albumId}";
-        var albumResult = await httpClient.GetSelfResultAsyncWithError<IqiyiAlbumResult>(GetDefaaultHttpRequestOptions(url), null).ConfigureAwait(false);
+        var albumResult = await httpClient.GetSelfResultAsyncWithError<IqiyiAlbumResult>(GetDefaultHttpRequestOptions(url), null).ConfigureAwait(false);
         if (albumResult != null && albumResult.Data != null && albumResult.Data.FirstVideo != null && albumResult.Data.LatestVideo != null)
         {
             var startDate = new DateTime(1970, 1, 1, 0, 0, 0, 0).AddMilliseconds(albumResult.Data.FirstVideo.publishTime).ToLocalTime();
@@ -228,7 +228,7 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
                 var month = begin.ToString("MM");
                 url = $"https://pub.m.iqiyi.com/h5/main/videoList/source/month/?sourceId={albumId}&year={year}&month={month}";
 
-                var videoListResult = await httpClient.GetSelfResultAsyncWithError<IqiyiVideoListResult>(GetDefaaultHttpRequestOptions(url), null).ConfigureAwait(false);
+                var videoListResult = await httpClient.GetSelfResultAsyncWithError<IqiyiVideoListResult>(GetDefaultHttpRequestOptions(url), null).ConfigureAwait(false);
                 if (videoListResult != null && videoListResult.Data != null && videoListResult.Data.Videos != null && videoListResult.Data.Videos.Count > 0)
                 {
                     list.AddRange(videoListResult.Data.Videos.Where(x => !x.ShortTitle.Contains("精编版") && !x.ShortTitle.Contains("会员版")));
@@ -297,7 +297,7 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
         var s2 = tvId.Substring(tvId.Length - 2);
         // 一次拿300秒的弹幕
         var url = $"http://cmts.iqiyi.com/bullet/{s1}/{s2}/{tvId}_300_{mat}.z";
-        HttpRequestOptions defaaultHttpRequestOptions = GetDefaaultHttpRequestOptions(url, null, cancellationToken);
+        HttpRequestOptions defaaultHttpRequestOptions = GetDefaultHttpRequestOptions(url, null, cancellationToken);
         var response = await httpClient.GetSelfResponse(defaaultHttpRequestOptions);
         if (!(response.StatusCode >= HttpStatusCode.OK && response.StatusCode <= (HttpStatusCode)299))
         {
