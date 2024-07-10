@@ -56,7 +56,7 @@ define(
                     container.querySelector('#WithRelatedDanmu').checked = config.Dandan.WithRelatedDanmu;
                     container.querySelector('#ChConvert').value = config.Dandan.ChConvert;
 
-
+// '<i class="listViewDragHandle dragHandle md-icon listItemIcon listItemIcon-transparent"></i>'
                     var html = '';
                     config.Scrapers.forEach(function (e) {
                         html += '<div class="listItem listItem-border sortableOption sortItem" data-sort="' + e + '">';

@@ -591,6 +591,7 @@ namespace Emby.Plugin.Danmu
                     }
 
                     var episodes = episodesItem.Items.ToList();
+                    var originEpisodes = episodes;
 
                     // 不处理季文件夹下的特典和extras影片（动画经常会混在一起）
                     var episodesWithoutSP = episodes.Where(x => x.ParentIndexNumber != null && x.ParentIndexNumber > 0)
@@ -620,12 +621,20 @@ namespace Emby.Plugin.Danmu
                             }
 
                             // 剧集可能更新中
-                            if (ignoreEpisodesMatch && media.Episodes.Count != episodes.Count)
+                            int dabmuEpisodesCount = media.Episodes.Count;
+                            if (ignoreEpisodesMatch && dabmuEpisodesCount != episodes.Count)
                             {
-                                _logger.Info("[{0}]剧集数不匹配. 可能是更新中进行强制更新: {1}, media.Episodes={2}, episodes.Count={3}", scraper.Name, providerVal, media.Episodes.Count, episodes.Count);
+                                _logger.Info("[{0}]剧集数不匹配. 可能是更新中进行强制更新: {1}, media.Episodes={2}, episodes.Count={3}", scraper.Name, providerVal, dabmuEpisodesCount, episodes.Count);
+                            }
+
+                            if (episodes.Count != dabmuEpisodesCount && originEpisodes.Count == dabmuEpisodesCount)
+                            {
+                                _logger.LogInformation("{0}季忽略特典或extra片段后媒体数={1}, 未忽略媒体数={2} == 获取弹幕媒体数={3}, 现在使用未忽略媒体数据", season.Name, episodes.Count, originEpisodes.Count, dabmuEpisodesCount);
+                                episodes = originEpisodes;
                             }
                             
-                            int minEpisodes = Math.Min(episodes.Count, media.Episodes.Count);
+                            int minEpisodes = Math.Min(episodes.Count, dabmuEpisodesCount);
+                            _logger.LogInformation("[{0}]匹配完成，媒体数={1}. 弹幕数={2}, 最终需要匹配数={3}, 弹幕工具={4}", season.Name, episodes.Count(), dabmuEpisodesCount, minEpisodes, scraper.Name);
                             for (var idx = 0; idx < minEpisodes; idx++)
                             {
                                 var episode = episodes[idx];
@@ -633,19 +642,18 @@ namespace Emby.Plugin.Danmu
                                 var indexNumber = episode.IndexNumber ?? 0;
                                 if (indexNumber <= 0)
                                 {
-                                    _logger.LogInformation("[{0}]匹配失败，缺少集号. [{1}]{2}", scraper.Name, season.Name,
-                                        fileName);
+                                    _logger.LogInformation("[{0}]匹配失败，缺少集号. [{1}]{2}", scraper.Name, season.Name, fileName);
                                     continue;
                                 }
 
-                                if (indexNumber > media.Episodes.Count)
+                                if (indexNumber > dabmuEpisodesCount)
                                 {
                                     _logger.LogInformation("[{0}]匹配失败，集号超过总集数，可能识别集号错误. [{1}]{2} indexNumber: {3}",
                                         scraper.Name, season.Name, fileName, indexNumber);
                                     continue;
                                 }
 
-                                if (ignoreEpisodesMatch || media.Episodes.Count == episodes.Count)
+                                if (ignoreEpisodesMatch || dabmuEpisodesCount == episodes.Count)
                                 {
                                     var epId = media.Episodes[idx].Id;
                                     var commentId = media.Episodes[idx].CommentId;
@@ -676,7 +684,7 @@ namespace Emby.Plugin.Danmu
                                 else
                                 {
                                     _logger.LogInformation("[{0}]刷新弹幕失败, 集数不一致。video: {1}.{2} 弹幕数：{3} 集数：{4}",
-                                        scraper.Name, indexNumber, episode.Name, media.Episodes.Count, episodes.Count);
+                                        scraper.Name, indexNumber, episode.Name, dabmuEpisodesCount, episodes.Count);
                                 }
                             }
 
@@ -806,8 +814,7 @@ namespace Emby.Plugin.Danmu
                             var indexNumber = episode.IndexNumber ?? 0;
                             if (indexNumber < 1 || indexNumber > media.Episodes.Count)
                             {
-                                _logger.LogInformation("[{0}]缺少集号或集号超过弹幕数，忽略处理. [{1}]{2}", scraper.Name, season.Name,
-                                    fileName);
+                                _logger.LogInformation("[{0}]缺少集号或集号超过弹幕数，忽略处理. [{1}]{2}, indexNumber={3}, mediaCount={4}", scraper.Name, season.Name, fileName, indexNumber, media.Episodes.Count);
                                 continue;
                             }
 
@@ -1073,7 +1080,7 @@ namespace Emby.Plugin.Danmu
             int episodeIndexNumber = episode.IndexNumber ?? 0;
             if (episodeIndexNumber < 1 || episodeIndexNumber>media.Episodes.Count)
             {
-                _logger.LogInformation("[{0}]缺少集号或集号超过弹幕数，忽略处理. [{1}]{2}", scraper.Name, season.Name, fileName);
+                _logger.LogInformation("[{0}]缺少集号或集号超过弹幕数，忽略处理. [{1}]{2}, indexNumber={3}, mediaCount={4}", scraper.Name, season.Name, fileName, episodeIndexNumber, media.Episodes.Count);
                 return null;
             }
             
