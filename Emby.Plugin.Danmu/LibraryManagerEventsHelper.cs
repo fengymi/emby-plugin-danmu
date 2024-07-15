@@ -989,7 +989,7 @@ namespace Emby.Plugin.Danmu
                     assConfig.TuneDuration = this.Config.AssSpeed.Trim().ToInt() - 8;
                 }
 
-                var assPath = Path.Combine(item.ContainingFolderPath, item.FileNameWithoutExtension + ".chs[" + scraper.ProviderId + ".danmu].ass");
+                var assPath = Path.Combine(item.ContainingFolderPath, item.FileNameWithoutExtension + ".chs[" + scraper.ProviderId + "_danmu].ass");
                 Danmaku2Ass.Bilibili.GetInstance().Create(bytes, assConfig, assPath);
             }
         }
