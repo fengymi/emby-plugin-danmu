@@ -38,66 +38,6 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
 
         public async Task<List<YoukuVideo>> SearchAsync(string keyword, CancellationToken cancellationToken)
         {
-            // if (true)
-            // {
-            //     await EnsureTokenCookie(cancellationToken);
-            //
-            //     var ctime = new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds();
-            //     var msg = new Dictionary<string, object>()
-            //     {
-            //         { "pid", 0 },
-            //         { "ctype", 10004 },
-            //         { "sver", "3.1.0" },
-            //         { "cver", "v1.0" },
-            //         { "ctime", ctime },
-            //         { "guid", this._cna },
-            //         { "vid", "vid_aaa" },
-            //         { "mat", "aa" },
-            //         { "mcount", 1 },
-            //         { "type", 1 }
-            //     };
-            //
-            //     // 需key按字母排序
-            //     var msgOrdered = msg.OrderBy(x => x.Key).ToDictionary(x => x.Key, x => x.Value).ToJson();
-            //     var msgEnc = Convert.ToBase64String(Encoding.UTF8.GetBytes(msgOrdered));
-            //     var sign = this.generateMsgSign(msgEnc);
-            //     msg.Add("msg", msgEnc);
-            //     msg.Add("sign", sign);
-            //
-            //
-            //     var appKey = "13243124";
-            //     var data = msg.ToJson();
-            //     var t = Convert.ToString(new DateTimeOffset(DateTime.UtcNow).ToUnixTimeMilliseconds());
-            //     var param = HttpUtility.ParseQueryString(string.Empty);
-            //     param["jsv"] = "2.7.0";
-            //     param["appKey"] = appKey;
-            //     param["t"] = t;
-            //     param["sign"] = this.generateTokenSign(t, appKey, data);
-            //     param["api"] = "mopen.youku.danmu.list";
-            //     param["v"] = "1.0";
-            //     param["type"] = "originaljson";
-            //     param["dataType"] = "jsonp";
-            //     param["timeout"] = "20000";
-            //     param["jsonpIncPrefix"] = "utility";
-            //
-            //     var builder = new UriBuilder("https://acs.youku.com/h5/mopen.youku.danmu.list/1.0/");
-            //     builder.Query = param.ToString();
-            //     HttpResponseMessage response;
-            //     var formContent = new FormUrlEncodedContent(new[]
-            //     {
-            //         new KeyValuePair<string, string>("data", data)
-            //     });
-            //
-            //     var postData = new Dictionary<string, string>();
-            //     postData["data"] = data;
-            //     HttpRequestOptions defaultHttpRequestOptions = GetDefaultHttpRequestOptions(builder.Uri.ToString());
-            //     defaultHttpRequestOptions.RequestHeaders.Add("Referer", "https://v.youku.com");
-            //     defaultHttpRequestOptions.SetPostData(postData);
-            //
-            //     await httpClient.Post(defaultHttpRequestOptions);
-            //     return null;
-            // }
-
             if (string.IsNullOrEmpty(keyword))
             {
                 return new List<YoukuVideo>();
@@ -128,8 +68,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
                 {
                     if (component.CommonData == null
                         || component.CommonData.TitleDTO == null
-                        || component.CommonData.HasYouku != 1
-                        || component.CommonData.IsYouku != 1)
+                        || (component.CommonData.HasYouku != 1 && component.CommonData.IsYouku != 1))
                     {
                         continue;
                     }

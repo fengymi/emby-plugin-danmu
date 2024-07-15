@@ -18,7 +18,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku.ExternalId
         public string UrlFormatString => "https://v.youku.com/v_nextstage/id_{0}.html";
 
         /// <inheritdoc />
-        public bool Supports(IHasProviderIds item) => item is Season;
+        public bool Supports(IHasProviderIds item) => item is Season || item is Series;
     }
 
 }

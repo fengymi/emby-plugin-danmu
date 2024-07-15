@@ -103,7 +103,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
                 var score = searchName.Distance(title);
                 if (score < 0.7)
                 {
-                    log.LogDebug("[{0}] 标题差异太大，忽略处理. 搜索词：{1}, score:　{2}", title, searchName, score);
+                    log.Info("[{0}] 标题差异太大，忽略处理. 搜索词：{1}, score:　{2}", title, searchName, score);
                     continue;
                 }
 
@@ -111,7 +111,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
                 var itemPubYear = item.ProductionYear ?? 0;
                 if (itemPubYear > 0 && pubYear > 0 && itemPubYear != pubYear)
                 {
-                    log.LogDebug("[{0}] 发行年份不一致，忽略处理. Youku：{1} jellyfin: {2}", title, pubYear, itemPubYear);
+                    log.Info("[{0}] 发行年份不一致，忽略处理. Youku：{1} emby: {2}", title, pubYear, itemPubYear);
                     continue;
                 }
 
