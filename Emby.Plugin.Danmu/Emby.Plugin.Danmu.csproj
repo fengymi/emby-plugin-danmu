@@ -41,4 +41,7 @@
     <ItemGroup>
       <Compile Remove="Scraper\Bilibili\**" />
     </ItemGroup>
+    <ItemGroup>
+      <Folder Include="Doc\image\" />
+    </ItemGroup>
 </Project>
