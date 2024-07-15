@@ -16,5 +16,10 @@ namespace Emby.Plugin.Danmu.Core.Controllers
          * 刷新某个id
          */
         public static string Refresh = "Refresh";
+        
+        /**
+         * 查询某个弹幕
+         */
+        public static string SearchDanmu = "SearchDanmu";
     }
 }

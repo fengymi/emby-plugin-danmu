@@ -27,7 +27,7 @@
     </ItemGroup>
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-        <Exec Command="cp $(TargetPath) /Users/fengymi/.config/emby-server/plugins/"/>
+        <Exec Command="cp $(TargetPath) $(HOME)/.config/emby-server/plugins/"/>
         <Exec Command="cp $(TargetPath) Doc/"/>
     </Target>
     <ItemGroup>

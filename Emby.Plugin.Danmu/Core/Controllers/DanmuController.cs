@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Runtime.Serialization;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -80,6 +81,16 @@ namespace Emby.Plugin.Danmu.Core.Controllers
         public async Task<object> Any(DanmuParams danmuParams)
         {
             _logger.Info("当前请求信息 danmuParams={0}", danmuParams.ToJson());
+            
+            var uri = new Uri("https://mmstat.com/");
+            CookieContainer cookieContainer = new CookieContainer();
+            string cookies = "cna=G8YbH5XfilgCASp4SzTgluko; expires=Thu, 13-Jul-34 08:04:43 GMT; path=/; domain=.mmstat.com; SameSite=none; Secure";
+            string pattern = @"expires=.*?;";
+            string replace = Regex.Replace(cookies, pattern, string.Empty);
+
+            cookieContainer.SetCookies(uri,replace);
+            _logger.Info("cookieContainer={0}, cookies={1}, replace={2}", cookieContainer.GetCookies(uri).ToJson(), cookies, replace);
+            
             // 获取json格式弹幕
             if (DanmuDispatchOption.GetJsonById.Equals(danmuParams.Option))
             {
@@ -89,6 +100,11 @@ namespace Emby.Plugin.Danmu.Core.Controllers
             if (DanmuDispatchOption.Refresh.Equals(danmuParams.Option))
             {
                 return await Refresh(danmuParams.Id);
+            }
+
+            if (DanmuDispatchOption.SearchDanmu.Equals(danmuParams.Option))
+            {
+                return await SearchDanmu(danmuParams.Keyword); 
             }
 
             // 获取支持的站点弹幕信息

@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using Emby.Plugin.Danmu.Core.Extensions;
 using Emby.Plugin.Danmu.Core.Http;
 using MediaBrowser.Common.Net;
@@ -16,6 +18,8 @@ namespace Emby.Plugin.Danmu.Scraper
         public const string HTTP_USER_AGENT =
             "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/93.0.4577.63 Safari/537.36 Edg/93.0.961.44";
 
+        private const string CookieExpireReplace = @"expires=.*?;";
+        
         protected ILogger _logger;
         // protected JsonSerializerOptions _jsonOptions = null;
         protected IHttpClient httpClient;
@@ -33,40 +37,50 @@ namespace Emby.Plugin.Danmu.Scraper
             _memoryCache = new MemoryCache(new MemoryCacheOptions());
         }
 
-        protected void AddCookies(string cookieVal, Uri uri)
+        protected virtual void AddCookies(Uri uri, string cookieVal, params char[]? separator)
         {
             // 清空旧的cookie
-            var cookies = _cookieContainer.GetCookies(uri);
-            foreach (Cookie co in cookies)
+            // var cookies = _cookieContainer.GetCookies(uri);
+            // foreach (Cookie co in cookies)
+            // {
+            //     co.Expires = DateTime.Now.Subtract(TimeSpan.FromDays(1));
+            // }
+
+            if (cookieVal == null)
             {
-                co.Expires = DateTime.Now.Subtract(TimeSpan.FromDays(1));
+                return;
             }
 
-
-            // 附加新的cookie
-            if (!string.IsNullOrEmpty(cookieVal))
+            DateTime maxExpiryDate = DateTime.Now.AddMinutes(60 * 6);
+            DateTime minExpiryDate = DateTime.Now.AddMinutes(10);
+            string[] multCookies = separator == null || separator.Length == 0
+                ? new[] { cookieVal }
+                : cookieVal.Split(separator);
+            _logger.Info("url={0}, set cookie = {1}, separator={2}, multCookies.length={3}", uri.AbsoluteUri, cookieVal, separator, multCookies.Length);
+            foreach (string c in multCookies)
             {
-                var domain = uri.GetSecondLevelHost();
-                var arr = cookieVal.Split(';');
-                foreach (var str in arr)
-                {
-                    var cookieArr = str.Split('=');
-                    if (cookieArr.Length != 2)
-                    {
-                        continue;
-                    }
+                string replaceCookie = Regex.Replace(c, CookieExpireReplace, string.Empty);
+                _logger.Info("one cookie={0}, noBlank={1}, url={2}", c, replaceCookie, uri.AbsoluteUri);
+                CookieContainer cookieContainer = new CookieContainer();
+                cookieContainer.SetCookies(uri, replaceCookie);
 
-                    var key = cookieArr[0].Trim();
-                    var value = cookieArr[1].Trim();
-                    try
+                CookieCollection cookieCollections = cookieContainer.GetCookies(uri);
+                foreach (Cookie cookie in cookieCollections)
+                {
+                    if (!cookie.Expired)
                     {
-                        _cookieContainer.Add(new Cookie(key, value, "/", "." + domain));
-                    }
-                    catch (Exception ex)
-                    {
-                        this._logger.Error("",  ex, ex.Message);
+                        if (cookie.Expires.CompareTo(maxExpiryDate) > 0)
+                        {
+                            cookie.Expires = maxExpiryDate;
+                        }
+                        else if (cookie.Expires.CompareTo(minExpiryDate) < 0)
+                        {
+                            cookie.Expires = minExpiryDate;
+                        }
                     }
                 }
+                
+                this._cookieContainer.Add(cookieCollections);
             }
         }
 
@@ -123,6 +137,12 @@ namespace Emby.Plugin.Danmu.Scraper
             {
                 _memoryCache.Dispose();
             }
+        }
+        
+        protected virtual Task LimitRequestFrequently()
+        {
+            Thread.Sleep(1000);
+            return Task.CompletedTask;
         }
     }
 }

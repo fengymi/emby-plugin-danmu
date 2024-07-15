@@ -46,7 +46,7 @@ define(
                     container.querySelector('#current_version').textContent = "v" + config.Version;
 
                     container.querySelector('#ToAss').checked = config.ToAss;
-                    container.querySelector('#OpenAllSource').checked = config.OpenAllSource;
+                    // container.querySelector('#OpenAllSource').checked = config.OpenAllSource;
                     container.querySelector('#AssFont').value = config.AssFont;
                     container.querySelector('#AssFontSize').value = config.AssFontSize;
                     container.querySelector('#AssTextOpacity').value = config.AssTextOpacity;
@@ -56,17 +56,33 @@ define(
                     container.querySelector('#WithRelatedDanmu').checked = config.Dandan.WithRelatedDanmu;
                     container.querySelector('#ChConvert').value = config.Dandan.ChConvert;
 
-// '<i class="listViewDragHandle dragHandle md-icon listItemIcon listItemIcon-transparent"></i>'
                     var html = '';
-                    config.Scrapers.forEach(function (e) {
-                        html += '<div class="listItem listItem-border sortableOption sortItem" data-sort="' + e + '">';
-                        html += '    <label class="listItemCheckboxContainer emby-checkbox-label">';
-                        html += '        <input type="checkbox" is="emby-checkbox" class="chkEnableCodec emby-checkbox emby-checkbox-focusring" name="ScraperItem" ' + (e.Enable ? 'checked' : '') + ' value="' + e.Name + '" >';
-                        html += '        <span class="checkboxLabel" style="width:200px" >' + e.Name + '</span>';
-                        html += '    </label>';
-                        html += '    <div class="listItemBody two-line listItemBodyText"></div>';
-                        html += '    <button type="button" is="paper-icon-button-light" title="上" class="btnSortable paper-icon-button-light btnSortableMoveUp btnViewItemUp" data-pluginindex="2"><span class="material-icons keyboard_arrow_up"></span></button>';
-                        html += '    <button type="button" is="paper-icon-button-light" title="下" class="btnSortable paper-icon-button-light btnSortableMoveDown btnViewItemDown" data-pluginindex="0"><span class="material-icons keyboard_arrow_down"></span></button>';
+                    // config.Scrapers.forEach(function (e) {
+                    //     html += '<div class="listItem listItem-border sortableOption sortItem" data-sort="' + e + '">';
+                    //     html += '    <label class="listItemCheckboxContainer emby-checkbox-label">';
+                    //     html += '        <input type="checkbox" is="emby-checkbox" class="chkEnableCodec emby-checkbox emby-checkbox-focusring" name="ScraperItem" ' + (e.Enable ? 'checked' : '') + ' value="' + e.Name + '" >';
+                    //     html += '        <span class="checkboxLabel" style="width:200px" >' + e.Name + '</span>';
+                    //     html += '    </label>';
+                    //     html += '    <div class="listItemBody two-line listItemBodyText"></div>';
+                    //     html += '    <i class="listViewDragHandle dragHandle md-icon listItemIcon listItemIcon-transparent">a</i>';
+                    //     // html += '    <button type="button" is="paper-icon-button-light" title="上" class="btnSortable paper-icon-button-light btnSortableMoveUp btnViewItemUp" data-pluginindex="2"><span class="material-icons keyboard_arrow_up"></span></button>';
+                    //     // html += '    <button type="button" is="paper-icon-button-light" title="下" class="btnSortable paper-icon-button-light btnSortableMoveDown btnViewItemDown" data-pluginindex="0"><span class="material-icons keyboard_arrow_down"></span></button>';
+                    //     html += '</div>';
+                    //     html += '\r\n';
+                    // });
+                    config.Scrapers.forEach(function (e, index) {
+                        html += '<div class="listItem listItem-hoverable drop-target ordered-drop-target-y" data-action="none" data-index="' + index + '" tabindex="0" draggable="true">';
+                        html += '    <div class="listItem-content listItem-content-margin listItem-content-bg listItemContent-touchzoom listItem-border listItem-border-offset-square">';
+                        html += '        <label data-action="toggleitemchecked"' +
+                            '                   class="itemAction listItem-emby-checkbox-label emby-checkbox-label secondaryText">' +
+                            '                <input tabindex="-1" name="ScraperItem" class="chkItemCheckbox emby-checkbox emby-checkbox-notext" is="emby-checkbox" type="checkbox" '+ (e.Enable ? "checked": "") + ' value="' + e.Name + '" />' +
+                            '                <span class="checkboxLabel listItem-checkboxLabel"></span>' +
+                            '            </label>' +
+                            '            <div class="listItemBody itemAction listItemBody-noleftpadding listItemBody-draghandle listItemBody-reduceypadding listItemBody-1-lines">' +
+                            '                <div class="listItemBodyText listItemBodyText-lf">' + e.Name + '</div>' +
+                            '            </div>' +
+                            '            <i class="listViewDragHandle dragHandle md-icon listItemIcon listItemIcon-transparent"></i>' +
+                            '       </div>'
                         html += '</div>';
                         html += '\r\n';
                     });
@@ -78,14 +94,15 @@ define(
                         scrapersElement.removeChild(scrapersElement.firstChild);
                     }
                     // 创建一个新的元素来承载 HTML 内容，如果 html 是一个字符串
-                    var div = document.createElement('div');
-                    div.innerHTML = html;
-                    // 现在，将创建的元素内的子节点逐个追加到目标元素
-                    while (div.firstChild) {
-                        scrapersElement.appendChild(div.firstChild);
-                    }
+                    // var div = document.createElement('div');
+                    // div.innerHTML = html;
+                    // // 现在，将创建的元素内的子节点逐个追加到目标元素
+                    // while (div.firstChild) {
+                    //     scrapersElement.appendChild(div.firstChild);
+                    // }
+                    scrapersElement.innerHTML = html;
 
-                    setButtons();
+                    // setButtons();
                     Dashboard.hideLoadingMsg();
                 });
             }
@@ -96,9 +113,10 @@ define(
             }
             
             function onLoad() {
-                wrapLoading(Promise.all([
-                    loadConfiguration(),
-                ]));
+                // wrapLoading(Promise.all([
+                //     loadConfiguration(),
+                // ]));
+                loadConfiguration();
             }
             container.addEventListener('viewshow', onLoad);
 
@@ -107,7 +125,7 @@ define(
                     Dashboard.showLoadingMsg();
                     ApiClient.getPluginConfiguration(TemplateConfig.pluginUniqueId).then(function (config) {
                         config.ToAss = document.querySelector('#ToAss').checked;
-                        config.OpenAllSource = document.querySelector('#OpenAllSource').checked;
+                        // config.OpenAllSource = document.querySelector('#OpenAllSource').checked;
                         config.AssFont = document.querySelector('#AssFont').value;
                         config.AssFontSize = document.querySelector('#AssFontSize').value;
                         config.AssTextOpacity = document.querySelector('#AssTextOpacity').value;
@@ -116,14 +134,14 @@ define(
 
                         var scrapers = [];
                         document.querySelectorAll('input[name="ScraperItem"]').forEach(function (inputElem) {
-                            var scraper = new Object();
+                            var scraper = {};
                             scraper.Name = inputElem.value;
                             scraper.Enable = inputElem.checked;
                             scrapers.push(scraper);
                         });
                         config.Scrapers = scrapers;
 
-                        var dandan = new Object();
+                        var dandan = {};
                         dandan.WithRelatedDanmu = container.querySelector('#WithRelatedDanmu').checked;
                         dandan.ChConvert = container.querySelector('#ChConvert').value;
                         config.Dandan = dandan;

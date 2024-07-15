@@ -97,5 +97,21 @@ namespace Emby.Plugin.Danmu.Core.Extensions
             
             return httpClient.GetResponse(httpRequestOptions);
         }
+
+        private static void SetCookies(this IHttpClient httpClient, HttpRequestOptions httpRequestOptions, HttpResponseInfo httpResponseInfo)
+        {
+            if (httpRequestOptions == null || httpResponseInfo.Headers == null)
+            {
+                return;
+            }
+
+            var requestHeaders = httpRequestOptions.RequestHeaders ?? new Dictionary<string, string>();
+            var cookieHeader = httpResponseInfo.Headers["Set-Cookie"];
+            if (cookieHeader != null)
+            {
+                
+            }
+            
+        }
     }
 }
