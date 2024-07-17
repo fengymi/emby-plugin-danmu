@@ -3,8 +3,7 @@
 ```
 弹弹play、爱奇艺、腾讯、优酷
 ```
-设置方式一样和jellyfin一样，但是api接口基本没有支持
-
+设置方式一样和jellyfin一样 [参考](https://github.com/cxfksword/jellyfin-plugin-danmu) ，但是api接口基本没有支持
 
 
 
@@ -17,7 +16,16 @@
 
 ```
 
+## 下载链接
+[Emby.Plugin.Danmu.dll](./doc/Emby.Plugin.Danmu.dll) <p/>
+[Emby.AndroidTV.2.1.14.弹幕.apk](./doc/Emby.AndroidTV.2.1.14.弹幕.apk)
 
 ## 遗留问题
 1. 配置暂不支持顺序调整
 
+
+
+### 预览
+
+<img src="./doc/设置页面.jpg"  width="720px" />
+<img src="./doc/tv-danmu.jpg"  width="720px" />

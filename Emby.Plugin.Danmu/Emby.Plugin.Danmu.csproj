@@ -28,7 +28,7 @@
 
     <Target Name="PostBuild" AfterTargets="PostBuildEvent">
         <Exec Command="cp $(TargetPath) $(HOME)/.config/emby-server/plugins/"/>
-        <Exec Command="cp $(TargetPath) Doc/"/>
+        <Exec Command="cp $(TargetPath) ../doc/"/>
     </Target>
     <ItemGroup>
         <None Remove="Configuration/configPage.html"/>
