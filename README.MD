@@ -17,8 +17,8 @@
 ```
 
 ## 下载链接
-[Emby.Plugin.Danmu.dll](./doc/Emby.Plugin.Danmu.dll) <p/>
-[Emby.AndroidTV.2.1.14.弹幕.apk](./doc/Emby.AndroidTV.2.1.14.弹幕.apk)
+[Emby.Plugin.Danmu.dll](https://github.com/fengymi/emby-plugin-danmu/releases/tag/1.0.0) <p/>
+[Emby.AndroidTV.2.1.14.弹幕.apk](https://github.com/fengymi/emby-plugin-danmu/releases/tag/1.0.0)
 
 ## 遗留问题
 1. 配置暂不支持顺序调整
@@ -27,5 +27,5 @@
 
 ### 预览
 
-<img src="./doc/设置页面.jpg"  width="720px" />
-<img src="./doc/tv-danmu.jpg"  width="720px" />
+<img src="./doc/image/设置页面.jpg"  width="720px" />
+<img src="./doc/image/tv-danmu.jpg"  width="720px" />

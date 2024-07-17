@@ -1,2 +1,3 @@
-/Emby.Plugin.Danmu/bin/
-/Emby.Plugin.Danmu/obj/
+Emby.Plugin.Danmu/bin/
+Emby.Plugin.Danmu/obj/
+.idea/
