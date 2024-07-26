@@ -63,13 +63,13 @@ namespace Emby.Plugin.Danmu
 
             _libraryManager = libraryManager;
             // 新增媒体信息
-            // _libraryManager.ItemAdded += (sender, args) =>
-            // {
-            //     var argsItem = args.Item;
-            //     QueueItem(argsItem, EventType.Add);
-            //     QueueItem(argsItem, EventType.Update);
-            //     QueueItem(argsItem, EventType.Update);
-            // };
+            _libraryManager.ItemAdded += (sender, args) =>
+            {
+                var argsItem = args.Item;
+                QueueItem(argsItem, EventType.Add);
+                QueueItem(argsItem, EventType.Update);
+                QueueItem(argsItem, EventType.Update);
+            };
             _logger = logManager.getDefaultLogger(GetType().ToString());
             _scraperManager = SingletonManager.ScraperManager;
             _fileSystem = FileSystem.instant;
