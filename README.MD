@@ -1,3 +1,7 @@
+## 2024-07-26更新
+1. 支持弹幕搜索
+2. 支持新增媒体自动下载
+
 ## 支持弹幕网站
 目前只支持以下站点，后续有空再更新
 ```
@@ -29,3 +33,5 @@
 
 <img src="./doc/image/设置页面.jpg"  width="720px" />
 <img src="./doc/image/tv-danmu.jpg"  width="720px" />
+
+<img src="./doc/image/弹幕搜索.png"  width="720px" />

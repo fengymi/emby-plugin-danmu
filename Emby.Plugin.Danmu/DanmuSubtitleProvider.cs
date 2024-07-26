@@ -17,19 +17,23 @@ using MediaBrowser.Controller.Subtitles;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Providers;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Emby.Plugin.Danmu
 {
     public class DanmuSubtitleProvider : ISubtitleProvider
     {
         public string Name => "Danmu";
-        // public int Order => 1;
 
         private readonly ILibraryManager _libraryManager;
         private readonly ILogger _logger;
         private readonly LibraryManagerEventsHelper _libraryManagerEventsHelper;
 
         private readonly ScraperManager _scraperManager;
+        private readonly IMemoryCache _memoryCache;
+        
+        private readonly MemoryCacheEntryOptions _pendingDanmuDownloadExpiredOption = new MemoryCacheEntryOptions()
+            { AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30) };
 
         public IEnumerable<VideoContentType> SupportedMediaTypes => new List<VideoContentType>()
             { VideoContentType.Movie, VideoContentType.Episode };
@@ -41,11 +45,20 @@ namespace Emby.Plugin.Danmu
             _logger = logManager.GetLogger(GetType().ToString());
             _scraperManager = SingletonManager.ScraperManager;
             _libraryManagerEventsHelper = libraryManagerEventsHelper;
+            _memoryCache = new MemoryCache(new MemoryCacheOptions());
         }
 
         public async Task<SubtitleResponse> GetSubtitles(string id, CancellationToken cancellationToken)
         {
             _logger.Info("开始查询弹幕 id={0}", id);
+            if (_memoryCache.TryGetValue(id, out bool has))
+            {
+                if (has)
+                {
+                    throw new CanIgnoreException($"已经触发下载了，无需重试");
+                }
+            }
+            
             var base64EncodedBytes = System.Convert.FromBase64String(id);
             id = System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
             var info = id.FromJson<SubtitleId>();
@@ -85,16 +98,24 @@ namespace Emby.Plugin.Danmu
                 _libraryManagerEventsHelper.QueueItem(item, EventType.Force);
             }
 
-            throw new CanIgnoreException($"弹幕下载已由{Plugin.Instance?.Name}插件接管.");
+            _memoryCache.Set<bool>(id, true, _pendingDanmuDownloadExpiredOption);
+            throw new CanIgnoreException($"弹幕下载已由{Plugin.Instance?.Name}插件接管，会自动异步下载，无需重试");
         }
 
         public async Task<IEnumerable<RemoteSubtitleInfo>> Search(SubtitleSearchRequest request,
             CancellationToken cancellationToken)
         {
-            _logger.Info("开始查询弹幕 request={0}", request);
+            // _logger.Info("开始查询弹幕 request={0}", request.ToJson());
+            if(request.Language == "zh-CN" || request.Language == "zh-TW" || request.Language == "zh-HK"){
+                request.Language = "chi";
+            }
+            if (request.Language != "chi")
+            {
+                return Array.Empty<RemoteSubtitleInfo>();
+            }
+            
             var list = new List<RemoteSubtitleInfo>();
-            bool isForced = request.IsForced != null && (bool)request.IsForced;
-            if (isForced || string.IsNullOrEmpty(request.MediaPath))
+            if (string.IsNullOrEmpty(request.MediaPath))
             {
                 return list;
             }
@@ -125,7 +146,7 @@ namespace Emby.Plugin.Danmu
             {
                 try
                 {
-                    var result = await scraper.Search(item);
+                    var result = await scraper.Search(item).ConfigureAwait(false);
                     foreach (var searchInfo in result)
                     {
                         var title = searchInfo.Name;
@@ -134,7 +155,7 @@ namespace Emby.Plugin.Danmu
                             title = $"[{searchInfo.Category}] {searchInfo.Name}";
                         }
 
-                        if (searchInfo.Year != null && searchInfo.Year > 0)
+                        if (searchInfo.Year != null && searchInfo.Year > 0 && searchInfo.Year > 1970)
                         {
                             title += $" ({searchInfo.Year})";
                         }
@@ -146,15 +167,19 @@ namespace Emby.Plugin.Danmu
 
                         var idInfo = new SubtitleId()
                         {
-                            ItemId = item.Id.ToString(), Id = searchInfo.Id.ToString(), ProviderId = scraper.ProviderId
+                            ItemId = item.Id.ToString(), 
+                            Id = searchInfo.Id.ToString(), 
+                            ProviderId = scraper.ProviderId,
                         };
                         list.Add(new RemoteSubtitleInfo()
                         {
                             Id = idInfo.ToJson().ToBase64(), // Id不允许特殊字幕，做base64编码处理
-                            Name = title,
-                            ProviderName = $"{Name}",
-                            Format = "xml",
-                            Comment = $"来源：{scraper.Name}",
+                            Name = $"{title} - 来源：{scraper.Name} 弹幕",
+                            ProviderName =$"{Name}",
+                            // ProviderName = $"来源：{scraper.Name} 弹幕",
+                            Language = "zh-CN",
+                            Format = "ass",
+                            Comment = $"来源：{scraper.Name} 弹幕",
                         });
                     }
                 }
@@ -163,7 +188,6 @@ namespace Emby.Plugin.Danmu
                     _logger.LogError(ex, "[{0}]Exception handled processing queued movie events", scraper.Name);
                 }
             }
-
 
             return list;
         }

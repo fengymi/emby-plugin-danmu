@@ -339,6 +339,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
                     return commentResult.Data.Result.ExtractToNumber(200).ToList();
                 }
             }
+            _logger.Info("获取结果失败 result={0}", result.ToJson());
 
             return new List<YoukuComment>();
         }
