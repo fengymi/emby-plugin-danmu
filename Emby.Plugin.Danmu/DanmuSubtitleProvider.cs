@@ -36,7 +36,10 @@ namespace Emby.Plugin.Danmu
             { AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30) };
 
         public IEnumerable<VideoContentType> SupportedMediaTypes => new List<VideoContentType>()
-            { VideoContentType.Movie, VideoContentType.Episode };
+        {
+            VideoContentType.Movie, 
+            VideoContentType.Episode, 
+        };
 
         public DanmuSubtitleProvider(ILibraryManager libraryManager, ILogManager logManager,
             LibraryManagerEventsHelper libraryManagerEventsHelper)
@@ -162,7 +165,8 @@ namespace Emby.Plugin.Danmu
 
                         if (item is Episode && searchInfo.EpisodeSize > 0)
                         {
-                            title += $"【共{searchInfo.EpisodeSize}集】";
+                            // title += $"【共{searchInfo.EpisodeSize}集】【第{((Episode) item).IndexNumber}集】全部更新";
+                            title += $"【共{searchInfo.EpisodeSize}集】全部更新";
                         }
 
                         var idInfo = new SubtitleId()

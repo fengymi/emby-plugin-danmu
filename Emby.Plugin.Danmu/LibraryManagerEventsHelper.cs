@@ -1012,10 +1012,8 @@ namespace Emby.Plugin.Danmu
 
             // 保存指定弹幕元数据
             updateItem.ProviderIds[providerId] = providerVal;
-            _logger.Info("1");
             await updateItem.UpdateToRepositoryAsync(ItemUpdateType.MetadataEdit, CancellationToken.None)
                 .ConfigureAwait(false);
-            _logger.Info("2");
         }
 
 
