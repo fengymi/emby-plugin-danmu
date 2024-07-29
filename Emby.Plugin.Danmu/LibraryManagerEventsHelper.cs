@@ -802,42 +802,70 @@ namespace Emby.Plugin.Danmu
                         // 更新季元数据
                         await ForceSaveProviderId(season, scraper.ProviderId, media.Id);
 
-                        // 更新所有剧集元数据，GetEpisodes一定要取所有fields，要不然更新会导致重建虚拟season季信息
-                        var episodeItemResult = season.GetEpisodes();
-                        var episodeList = episodeItemResult.Items;
-                        for (var idx = 0; idx < episodeList.Count(); idx++)
-                        {
-                            var episode = episodeList[idx];
-                            var fileName = Path.GetFileName(episode.Path);
-
-                            // 没对应剧集号的，忽略处理
-                            var indexNumber = episode.IndexNumber ?? 0;
-                            if (indexNumber < 1 || indexNumber > media.Episodes.Count)
-                            {
-                                _logger.LogInformation("[{0}]缺少集号或集号超过弹幕数，忽略处理. [{1}]{2}, indexNumber={3}, mediaCount={4}", scraper.Name, season.Name, fileName, indexNumber, media.Episodes.Count);
-                                continue;
-                            }
-
-                            // 特典或extras影片不处理（动画经常会放在季文件夹下）
-                            if (episode.ParentIndexNumber == null || episode.ParentIndexNumber == 0)
-                            {
-                                _logger.LogInformation("[{0}]缺少季号，可能是特典或extras影片，忽略处理. [{1}]{2}", scraper.Name,
-                                    season.Name, fileName);
-                                continue;
-                            }
-
-                            var epId = media.Episodes[indexNumber - 1].Id;
-                            var commentId = media.Episodes[indexNumber - 1].CommentId;
-
-                            // 下载弹幕xml文件
-                            await this.DownloadDanmu(scraper, episode, commentId, true).ConfigureAwait(false);
-
-                            // 更新剧集元数据
-                            await ForceSaveProviderId(episode, scraper.ProviderId, epId);
-                        }
+                        // 下载一集弹幕
+                        await downloadOneEpisode((Episode)item, media, scraper);
+                        // // 更新所有剧集元数据，GetEpisodes一定要取所有fields，要不然更新会导致重建虚拟season季信息
+                        // var episodeItemResult = season.GetEpisodes();
+                        // var episodeList = episodeItemResult.Items;
+                        // for (var idx = 0; idx < episodeList.Count(); idx++)
+                        // {
+                        //     var episode = episodeList[idx];
+                        //     var fileName = Path.GetFileName(episode.Path);
+                        //
+                        //     // 没对应剧集号的，忽略处理
+                        //     var indexNumber = episode.IndexNumber ?? 0;
+                        //     if (indexNumber < 1 || indexNumber > media.Episodes.Count)
+                        //     {
+                        //         _logger.LogInformation("[{0}]缺少集号或集号超过弹幕数，忽略处理. [{1}]{2}, indexNumber={3}, mediaCount={4}", scraper.Name, season.Name, fileName, indexNumber, media.Episodes.Count);
+                        //         continue;
+                        //     }
+                        //
+                        //     // 特典或extras影片不处理（动画经常会放在季文件夹下）
+                        //     if (episode.ParentIndexNumber == null || episode.ParentIndexNumber == 0)
+                        //     {
+                        //         _logger.LogInformation("[{0}]缺少季号，可能是特典或extras影片，忽略处理. [{1}]{2}", scraper.Name,
+                        //             season.Name, fileName);
+                        //         continue;
+                        //     }
+                        //
+                        //     var epId = media.Episodes[indexNumber - 1].Id;
+                        //     var commentId = media.Episodes[indexNumber - 1].CommentId;
+                        //
+                        //     // 下载弹幕xml文件
+                        //     await this.DownloadDanmu(scraper, episode, commentId, true).ConfigureAwait(false);
+                        //
+                        //     // 更新剧集元数据
+                        //     await ForceSaveProviderId(episode, scraper.ProviderId, epId);
+                        // }
                     }
                 }
             }
+        }
+
+        private async Task downloadOneEpisode(Episode episode, ScraperMedia media, AbstractScraper scraper)
+        {
+            var fileName = Path.GetFileName(episode.Path);
+            var indexNumber = episode.IndexNumber ?? 0;
+            if (indexNumber < 1 || indexNumber > media.Episodes.Count)
+            {
+                _logger.LogInformation("[{0}]缺少集号或集号超过弹幕数，忽略处理. [{1}]{2}, indexNumber={3}, mediaCount={4}", scraper.Name, episode.Name, fileName, indexNumber, media.Episodes.Count);
+                return;
+            }
+            // 特典或extras影片不处理（动画经常会放在季文件夹下）
+            if (episode.ParentIndexNumber == null || episode.ParentIndexNumber == 0)
+            {
+                _logger.LogInformation("[{0}]缺少季号，可能是特典或extras影片，忽略处理. [{1}]{2}", scraper.Name, episode.Name, fileName);
+                return;
+            }
+
+            var epId = media.Episodes[indexNumber - 1].Id;
+            var commentId = media.Episodes[indexNumber - 1].CommentId;
+
+            // 下载弹幕xml文件
+            await this.DownloadDanmu(scraper, episode, commentId, true).ConfigureAwait(false);
+
+            // 更新剧集元数据
+            await ForceSaveProviderId(episode, scraper.ProviderId, epId);
         }
 
 

@@ -165,8 +165,8 @@ namespace Emby.Plugin.Danmu
 
                         if (item is Episode && searchInfo.EpisodeSize > 0)
                         {
-                            // title += $"【共{searchInfo.EpisodeSize}集】【第{((Episode) item).IndexNumber}集】全部更新";
-                            title += $"【共{searchInfo.EpisodeSize}集】全部更新";
+                            title += $"【共{searchInfo.EpisodeSize}集】【第{((Episode) item).IndexNumber}集】";
+                            // title += $"【共{searchInfo.EpisodeSize}集】全部更新";
                         }
 
                         var idInfo = new SubtitleId()
