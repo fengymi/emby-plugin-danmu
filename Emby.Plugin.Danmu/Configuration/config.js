@@ -133,7 +133,13 @@ define(
                         config.AssSpeed = document.querySelector('#AssSpeed').value;
 
                         var scrapers = [];
+                        let uniqScrapers = new Set();
                         document.querySelectorAll('input[name="ScraperItem"]').forEach(function (inputElem) {
+                            if (uniqScrapers.has(inputElem.value)) {
+                                return;
+                            }
+                            
+                            uniqScrapers.add(inputElem.value);
                             var scraper = {};
                             scraper.Name = inputElem.value;
                             scraper.Enable = inputElem.checked;
