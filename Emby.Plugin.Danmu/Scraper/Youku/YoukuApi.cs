@@ -254,6 +254,10 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
             for (int mat = 0; mat < totalMat; mat++)
             {
                 var comments = await this.GetDanmuContentByMatAsync(vid, mat, cancellationToken);
+                if (comments == null || comments.Count == 0)
+                {
+                    break; 
+                }
                 danmuList.AddRange(comments);
 
                 // 等待一段时间避免api请求太快
