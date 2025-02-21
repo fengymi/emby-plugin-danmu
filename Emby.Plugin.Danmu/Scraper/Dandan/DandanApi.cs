@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -22,11 +24,39 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
         private DateTime lastRequestTime = DateTime.Now.AddDays(-1);
         private readonly ILogger _logger;
         private readonly IJsonSerializer _jsonSerializer;
+        const string API_ID = "";
+        const string API_SECRET = "";
 
 
         public DandanOption Config
         {
             get { return Plugin.Instance?.Configuration.Dandan ?? new DandanOption(); }
+        }
+
+        protected string ApiID {
+            get
+            {
+                var apiId = Environment.GetEnvironmentVariable("DANDAN_API_ID");
+                if (!string.IsNullOrEmpty(apiId))
+                {
+                    return apiId;
+                }
+
+                return API_ID;
+            }
+        }
+
+        protected string ApiSecret {
+            get
+            {
+                var apiSecret = Environment.GetEnvironmentVariable("DANDAN_API_SECRET");
+                if (!string.IsNullOrEmpty(apiSecret))
+                {
+                    return apiSecret;
+                }
+
+                return API_SECRET;
+            }
         }
 
         /// <summary>
@@ -62,14 +92,16 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
 
             keyword = HttpUtility.UrlEncode(keyword);
             var url = $"https://api.dandanplay.net/api/v2/search/anime?keyword={keyword}";
-            var response = await httpClient.GetResponse(new HttpRequestOptions
+            var httpRequestOptions = new HttpRequestOptions
             {
                 //Url = $"http://sub.xmp.sandai.net:8000/subxl/{cid}.json",
                 Url = url,
                 UserAgent = $"{HTTP_USER_AGENT}",
                 TimeoutMs = 30000,
                 AcceptHeader = "application/json",
-            }).ConfigureAwait(false);
+            };
+            injectAppId(httpRequestOptions, url);
+            var response = await httpClient.GetResponse(httpRequestOptions).ConfigureAwait(false);
 
             // _logger.Info("res = {0}", response.ToString());
             // _logger.Info("{0} Search | Response -> {1}", url, _jsonSerializer.SerializeToString(response));
@@ -107,14 +139,16 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
             }
 
             var url = $"https://api.dandanplay.net/api/v2/bangumi/{animeId}";
-            var response = await httpClient.GetResponse(new HttpRequestOptions
+            HttpRequestOptions httpRequestOptions = new HttpRequestOptions
             {
                 //Url = $"http://sub.xmp.sandai.net:8000/subxl/{cid}.json",
                 Url = url,
                 UserAgent = $"{HTTP_USER_AGENT}",
                 TimeoutMs = 30000,
                 AcceptHeader = "application/json",
-            }).ConfigureAwait(false);
+            };
+            injectAppId(httpRequestOptions, url);
+            var response = await httpClient.GetResponse(httpRequestOptions).ConfigureAwait(false);
             // var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
             // response.EnsureSuccessStatusCode();
                         
@@ -157,7 +191,9 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
             var withRelated = this.Config.WithRelatedDanmu ? "true" : "false";
             var chConvert = this.Config.ChConvert;
             var url = $"https://api.dandanplay.net/api/v2/comment/{epId}?withRelated={withRelated}&chConvert={chConvert}";
-            var result = await httpClient.GetSelfResultAsync<CommentResult>(GetDefaultHttpRequestOptions(url)).ConfigureAwait(false);
+            HttpRequestOptions httpRequestOptions = GetDefaultHttpRequestOptions(url);
+            injectAppId(httpRequestOptions, url);
+            var result = await httpClient.GetSelfResultAsync<CommentResult>(httpRequestOptions).ConfigureAwait(false);
             
             if (result != null)
             {
@@ -180,6 +216,31 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
             {
                 this._logger.Debug("请求太频繁，等待{0}毫秒后继续执行...", diff);
                 Thread.Sleep(diff);
+            }
+        }
+
+        private void injectAppId(HttpRequestOptions httpRequestOptions, string url)
+        {
+            var timestamp = DateTimeOffset.Now.ToUnixTimeSeconds();
+            var signature = GenerateSignature(url, timestamp);
+            httpRequestOptions.RequestHeaders.Add("X-AppId", ApiID);
+            httpRequestOptions.RequestHeaders.Add("X-Signature", signature);
+            httpRequestOptions.RequestHeaders.Add("X-Timestamp", timestamp.ToString());
+        }
+
+        protected string GenerateSignature(string url, long timestamp)
+        {
+            if (string.IsNullOrEmpty(ApiID) || string.IsNullOrEmpty(ApiSecret))
+            {
+                throw new Exception("弹弹接口缺少API_ID和API_SECRET");
+            }
+            var uri = new Uri(url);
+            var path = uri.AbsolutePath;
+            var str = $"{ApiID}{timestamp}{path}{ApiSecret}";
+            using (var sha256 = SHA256.Create())
+            {
+                var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(str));
+                return Convert.ToBase64String(hashBytes);
             }
         }
     }
