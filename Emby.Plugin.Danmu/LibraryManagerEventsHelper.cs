@@ -797,6 +797,7 @@ namespace Emby.Plugin.Danmu
                     }
 
                     var media = await scraper.GetMedia(season, mediaId);
+                    // _logger.LogInformation("查询弹幕信息 media= " + media.ToJson());
                     if (media != null)
                     {
                         // 更新季元数据

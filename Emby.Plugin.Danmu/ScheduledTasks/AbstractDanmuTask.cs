@@ -45,5 +45,17 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
 
             return filter;
         }
+        protected virtual string[] GetScraperFilterArray(ReadOnlyCollection<AbstractScraper> scrapers)
+        {
+
+            int i = 0;
+            var filter = new string[scrapers.Count];
+            foreach (var scraper in scrapers)
+            {
+                filter[i++] = scraper.ProviderId;
+            }
+
+            return filter;
+        }
     }
 }

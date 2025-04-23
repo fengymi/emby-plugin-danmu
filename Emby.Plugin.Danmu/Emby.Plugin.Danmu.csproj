@@ -30,6 +30,7 @@
         <Exec Command="cp $(TargetPath) $(HOME)/.config/emby-server/plugins/"/>
         <Exec Command="cp $(TargetPath) ../doc/"/>
         <Exec Command="killall EmbyServer" ContinueOnError="true"/>
+        <Exec Command="sleep 3"/>
         <Exec Command="open -a EmbyServer"/>
     </Target>
     <ItemGroup>

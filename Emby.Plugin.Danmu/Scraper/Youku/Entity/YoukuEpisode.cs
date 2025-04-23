@@ -6,8 +6,21 @@ namespace Emby.Plugin.Danmu.Scraper.Youku.Entity
 {
     public class YoukuEpisode
     {
+        private string _id;
         [DataMember(Name="id")]
-        public string ID { get; set; }
+        public string ID {
+            get
+            {
+                if (string.IsNullOrEmpty(_id))
+                {
+                    return _id;
+                }
+
+                return _id.Replace("=", "_");
+
+            }
+            set { this._id = value; }
+        }
 
         [DataMember(Name="seq")]
         public string Seq { get; set; }

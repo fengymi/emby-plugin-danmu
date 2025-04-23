@@ -110,6 +110,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
                 return null;
             }
 
+            id = id.Replace("_", "=");
             await this.LimitRequestFrequently();
 
             var cacheKey = $"video_{id}";
@@ -153,6 +154,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
             {
                 return null;
             }
+            id = id.Replace("_", "=");
 
             if (page <= 0)
             {
@@ -207,6 +209,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
             {
                 return null;
             }
+            vid = vid.Replace("_", "=");
 
             var cacheKey = $"episode_{vid}";
             var expiredOption = new MemoryCacheEntryOptions()
@@ -240,6 +243,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
             {
                 return danmuList;
             }
+            vid = vid.Replace("_", "=");
 
             await this.EnsureTokenCookie(cancellationToken);
 
@@ -276,6 +280,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
             {
                 return new List<YoukuComment>();
             }
+            vid = vid.Replace("_", "=");
 
             await this.EnsureTokenCookie(cancellationToken);
 
