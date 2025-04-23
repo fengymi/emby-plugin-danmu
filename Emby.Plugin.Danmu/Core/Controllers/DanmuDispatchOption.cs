@@ -2,10 +2,15 @@ namespace Emby.Plugin.Danmu.Core.Controllers
 {
     public class DanmuDispatchOption
     {
-        /**
-         * 获取对应id的json弹幕信息
-         */
-        public static string GetJsonById = "GetJsonById";
+     /**
+      * 获取对应id的json弹幕信息
+      */
+     public static string GetJsonById = "GetJsonById";
+     
+     /**
+      * 获取对应id的json弹幕信息
+      */
+     public static string DownloadXml = "DownloadXml";
         
         /**
          * 获取支持的全部站点信息

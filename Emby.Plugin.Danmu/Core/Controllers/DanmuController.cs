@@ -27,6 +27,8 @@ namespace Emby.Plugin.Danmu.Core.Controllers
 {
     [Route("/plugin/danmu/{id}")]
     [Route("/api/danmu/{id}")]
+    [Route("/plugin/danmu/raw/{id}")]
+    [Route("/api/danmu/{id}/raw")]
     [Route("/api/danmu/search")]
     public class DanmuParams : IReturn<object>
     {
@@ -37,7 +39,7 @@ namespace Emby.Plugin.Danmu.Core.Controllers
         public List<string> NeedSites { get; set; } = new List<string>();
         
         [DataMember(Name="option")]
-        public string Option { get; set; } = DanmuDispatchOption.GetJsonById;
+        public string Option { get; set; } = DanmuDispatchOption.DownloadXml;
         
         [DataMember(Name="keyword")]
         public string Keyword { get; set; } = string.Empty;
@@ -114,6 +116,11 @@ namespace Emby.Plugin.Danmu.Core.Controllers
                 }
                 result.Data = sources;
                 return result;
+            }
+
+            if (DanmuDispatchOption.DownloadXml.Equals(danmuParams.Option))
+            {
+                return await Download(danmuParams.Id);
             }
 
             return "暂不支持的操作: " + danmuParams.Option;
@@ -292,6 +299,34 @@ namespace Emby.Plugin.Danmu.Core.Controllers
         
             return list;
         }
+        
+        public async Task<object> Download(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                throw new ResourceNotFoundException();
+            }
+
+            var currentItem = _libraryManager.GetItemById(id);
+            if (currentItem == null)
+            {
+                throw new ResourceNotFoundException();
+            }
+
+            var readOnlyCollection = _scraperManager.All();
+            foreach (AbstractScraper abstractScraper in readOnlyCollection)
+            {
+               var danmuPath = Path.Combine(currentItem.ContainingFolderPath, currentItem.FileNameWithoutExtension + "_" + abstractScraper.ProviderId + ".xml");
+               var fileMeta = _fileSystem.GetFileInfo(danmuPath);
+               if (fileMeta.Exists)
+               {
+                   return System.IO.File.ReadAllBytes(danmuPath);
+               }
+            }
+
+            return null;
+        }
+        
         //
         // /// <summary>
         // /// 查找弹幕

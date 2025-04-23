@@ -71,10 +71,11 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
             var scrapers = this._scraperManager.All();
             var items = _libraryManager.GetItemList(new InternalItemsQuery
             {
-                ExcludeProviderIds = this.GetScraperFilter(scrapers),
-                IncludeItemTypes = new[] { "Movie", "Season"}
+                MissingAllProviderIds = this.GetScraperFilterArray(scrapers),
+                IncludeItemTypes = new[] { "Movie", "Episode"}
             }).ToList();
 
+            _logger.LogInformation("Scan danmu for {0} videos.", items.Count);
             var successCount = 0;
             var failCount = 0;
             for (int idx = 0; idx < items.Count; idx++)
@@ -102,19 +103,10 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
                         var movieItem = (Movie)item;
                         await _libraryManagerEventsHelper.ProcessQueuedMovieEvents(new List<LibraryEvent>() { new LibraryEvent { Item = movieItem, EventType = EventType.Add } }, EventType.Add).ConfigureAwait(false);
                     }
-                    else if (item is Season)
+                    else if (item is Episode)
                     {
-                        var seasonItem = (Season)item;
-                        // 搜索匹配season的元数据
-                        await _libraryManagerEventsHelper.ProcessQueuedSeasonEvents(new List<LibraryEvent>() { new LibraryEvent { Item = seasonItem, EventType = EventType.Add } }, EventType.Add).ConfigureAwait(false);
-                        // 下载剧集弹幕
-                        await _libraryManagerEventsHelper.ProcessQueuedSeasonEvents(new List<LibraryEvent>() { new LibraryEvent { Item = seasonItem, EventType = EventType.Update } }, EventType.Update).ConfigureAwait(false);
-                    } 
-                    // else if (item is Episode)
-                    // {
-                    //     var episodeItem = (Episode)item;
-                    //     await _libraryManagerEventsHelper.ProcessQueuedSeasonEvents(new List<LibraryEvent>() { new LibraryEvent { Item = episodeItem, EventType = EventType.Update } }, EventType.Update).ConfigureAwait(false);
-                    // }
+                        await _libraryManagerEventsHelper.ProcessQueuedEpisodeEvents(new List<LibraryEvent>() { new LibraryEvent { Item = item, EventType = EventType.Update } }, EventType.Update).ConfigureAwait(false);
+                    }
                     
                     successCount++;
                 }

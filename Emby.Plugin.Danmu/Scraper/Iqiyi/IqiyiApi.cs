@@ -22,11 +22,12 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
 {
     public class IqiyiApi : AbstractApi
     {
-        private static readonly Regex regVideoInfo = new Regex(@"pageProps"":\{""videoInfo"":(\{.+?\}),""featureInfo", RegexOptions.Compiled);
-        private static readonly Regex regAlbumInfo = new Regex(@"""albumInfo"":(\{.+?\}),", RegexOptions.Compiled);
-        
-        // private TimeLimiter _timeConstraint = TimeLimiter.GetFromMaxCountByInterval(1, TimeSpan.FromMilliseconds(1000));
-        // private TimeLimiter _delayExecuteConstraint = TimeLimiter.GetFromMaxCountByInterval(1, TimeSpan.FromMilliseconds(100));
+        private const string MOBILE_USER_AGENT =
+            "Mozilla/5.0 (Linux; Android 8.0; Nexus 5 Build/MRA58N) AppleWebKit/536.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36";
+
+        private new const string HTTP_USER_AGENT = MOBILE_USER_AGENT;
+        private static readonly Regex regVideoInfo = new Regex(@"""videoInfo"":(\{.+?\}),""", RegexOptions.Compiled);
+        private static readonly Regex regAlbumInfo = new Regex(@"""albumInfo"":(\{.+?\}),""", RegexOptions.Compiled);
         
         public IqiyiApi(ILogManager logManager, IHttpClient httpClient)
             : base(logManager.getDefaultLogger(typeof(IqiyiApi).ToString()), httpClient)
@@ -89,11 +90,11 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
         var videoInfo = await GetVideoBaseAsync(id, cancellationToken).ConfigureAwait(false);
         if (videoInfo != null)
         {
-            if (videoInfo.channelId == 6)
+            if (videoInfo.channelName == "综艺")
             { // 综艺需要特殊处理
                 videoInfo.Epsodelist = await this.GetZongyiEpisodesAsync($"{videoInfo.AlbumId}", cancellationToken).ConfigureAwait(false);
             }
-            else if (videoInfo.channelId == 1)
+            else if (videoInfo.channelName == "电影")
             { // 电影
                 var duration = new TimeSpan(0, 0, videoInfo.Duration);
                 videoInfo.Epsodelist = new List<IqiyiEpisode>() {
@@ -129,8 +130,10 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
 
         await this.LimitRequestFrequently();
 
-        var url = $"https://www.iqiyi.com/v_{id}.html";
-        var videoInfo = await httpClient.GetSelfResultAsync<IqiyiHtmlVideoInfo>(GetDefaultHttpRequestOptions(url, null, cancellationToken), response =>
+        var url = $"https://m.iqiyi.com/v_{id}.html";
+        var defaultHttpRequestOptions = GetDefaultHttpRequestOptions(url, null, cancellationToken);
+        defaultHttpRequestOptions.UserAgent = HTTP_USER_AGENT;
+        var videoInfo = await httpClient.GetSelfResultAsync<IqiyiHtmlVideoInfo>(defaultHttpRequestOptions, response =>
         {
             
             // 确保响应状态码为成功
@@ -141,9 +144,22 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
                 using (var reader = new StreamReader(responseStream, Encoding.UTF8))
                 {
                     var htmlResult = reader.ReadToEnd();
+                    var albumJson = regAlbumInfo.FirstMatchGroup(htmlResult);
+                    var albumInfo = albumJson.FromJson<IqiyiHtmlAlbumInfo>();
                     var videoJson = regVideoInfo.FirstMatchGroup(htmlResult);
-                    return videoJson;
+                    var videoInfo = videoJson.FromJson<IqiyiHtmlVideoInfo>();
+                    if (videoInfo != null)
+                    {
+                        if (albumInfo != null)
+                        {
+                            videoInfo.VideoCount = albumInfo.VideoCount;
+                        }
+
+                        return videoInfo.ToJson();
+                    }
                 }
+
+                return null;
             }
             else
             {
@@ -151,22 +167,8 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
                 throw new InvalidOperationException($"请求失败，HTTP 状态码：{response.StatusCode}");
             }
             
-            
-            // var body = response.Content.ReadFromJsonAsync<string>().ConfigureAwait(false);
-            //
-            // string result = body.GetAwaiter().GetResult();
-            // var videoJson = regVideoInfo.FirstMatchGroup(result);
-            //
-            // _logger.Info("解析结果数据 videoJson={0}", videoJson);
-            // return videoJson;
         });
         
-        // var response = await httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
-        // response.EnsureSuccessStatusCode();
-
-        // var body = await response.Content.ReadAsStringAsync();
-        // var videoJson = regVideoInfo.FirstMatchGroup(body);
-        // var videoInfo = videoJson.FromJson<IqiyiHtmlVideoInfo>();
         if (videoInfo != null)
         {
             this._memoryCache.Set(cacheKey, videoInfo, expiredOption);

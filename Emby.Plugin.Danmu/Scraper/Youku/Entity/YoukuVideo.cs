@@ -11,8 +11,21 @@ namespace Emby.Plugin.Danmu.Scraper.Youku.Entity
         [DataMember(Name="videos")]
         public List<YoukuEpisode> Videos { get; set; } = new List<YoukuEpisode>();
 
+        private string _id;
         [IgnoreDataMember]
-        public string ID { get; set; }
+        public string ID {
+            get
+            {
+                if (string.IsNullOrEmpty(_id))
+                {
+                    return _id;
+                }
+
+                return _id.Replace("=", "_");
+
+            }
+            set { this._id = value; }
+        }
 
         [IgnoreDataMember]
         public string Title { get; set; }

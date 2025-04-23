@@ -110,6 +110,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
                 return null;
             }
 
+            id = id.Replace("_", "=");
             await this.LimitRequestFrequently();
 
             var cacheKey = $"video_{id}";
@@ -153,6 +154,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
             {
                 return null;
             }
+            id = id.Replace("_", "=");
 
             if (page <= 0)
             {
@@ -207,6 +209,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
             {
                 return null;
             }
+            vid = vid.Replace("_", "=");
 
             var cacheKey = $"episode_{vid}";
             var expiredOption = new MemoryCacheEntryOptions()
@@ -240,6 +243,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
             {
                 return danmuList;
             }
+            vid = vid.Replace("_", "=");
 
             await this.EnsureTokenCookie(cancellationToken);
 
@@ -276,6 +280,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
             {
                 return new List<YoukuComment>();
             }
+            vid = vid.Replace("_", "=");
 
             await this.EnsureTokenCookie(cancellationToken);
 
@@ -325,13 +330,11 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
                 new KeyValuePair<string, string>("data", data)
             });
 
-            var postData = new Dictionary<string, string>();
-            postData["data"] = data;
             HttpRequestOptions defaultHttpRequestOptions = GetDefaultHttpRequestOptions(builder.Uri.ToString());
             defaultHttpRequestOptions.RequestHeaders.Add("Referer", "https://v.youku.com");
-            defaultHttpRequestOptions.SetPostData(postData);
+            defaultHttpRequestOptions.RequestHttpContent = formContent;
 
-            var result = await httpClient.GetSelfResultAsyncWithError<YoukuRpcResult>(defaultHttpRequestOptions)
+            var result = await httpClient.GetSelfResultAsyncWithError<YoukuRpcResult>(defaultHttpRequestOptions, method:"POST")
                 .ConfigureAwait(false);
             // var result = await response.Content.ReadFromJsonAsync<YoukuRpcResult>(this._jsonOptions, cancellationToken).ConfigureAwait(false);
             if (result != null && !string.IsNullOrEmpty(result.Data.Result))

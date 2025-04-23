@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,7 +11,6 @@ using MediaBrowser.Controller.Entities;
 using MediaBrowser.Controller.Entities.Movies;
 using MediaBrowser.Controller.Entities.TV;
 using MediaBrowser.Controller.Library;
-using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
 using MediaBrowser.Model.Tasks;
 
@@ -64,14 +62,11 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
             await Task.Yield();
 
             progress?.Report(0);
-            
             _logger.Info("刷新任务开始");
-
             var scrapers = this._scraperManager.All();
             var items = _libraryManager.GetItemList(new InternalItemsQuery
             {
-                // MediaTypes = new[] { MediaType.Video },
-                ExcludeProviderIds = this.GetScraperFilter(scrapers),
+                HasAnyProviderId = this.GetScraperFilterArray(scrapers),
                 IncludeItemTypes = new[] { "Movie", "Episode"}
             }).ToList();
 
@@ -100,16 +95,18 @@ namespace Emby.Plugin.Danmu.ScheduledTasks
                         continue;
                     }
 
-
                     // 推送下载最新的xml (season刷新会同时刷新episode，所以不需要再推送episode，而且season是bv号的，只能通过season来刷新)
-                    switch (item)
+                    if (item is Movie)
                     {
-                        case Movie movie:
-                            await _libraryManagerEventsHelper.ProcessQueuedMovieEvents(new List<LibraryEvent>() { new LibraryEvent { Item = item, EventType = EventType.Update } }, EventType.Update).ConfigureAwait(false);
-                            break;
-                        case Season season:
-                            await _libraryManagerEventsHelper.ProcessQueuedSeasonEvents(new List<LibraryEvent>() { new LibraryEvent { Item = item, EventType = EventType.Update } }, EventType.Update).ConfigureAwait(false);
-                            break;
+                        await _libraryManagerEventsHelper.ProcessQueuedMovieEvents(new List<LibraryEvent>() { new LibraryEvent { Item = item, EventType = EventType.Update } }, EventType.Update).ConfigureAwait(false);
+                    }
+                    else if (item is Episode)
+                    {
+                        await _libraryManagerEventsHelper.ProcessQueuedEpisodeEvents(new List<LibraryEvent>() { new LibraryEvent { Item = item, EventType = EventType.Update } }, EventType.Update).ConfigureAwait(false);
+                    }
+                    else if (item is Season)
+                    {
+                        await _libraryManagerEventsHelper.ProcessQueuedSeasonEvents(new List<LibraryEvent>() { new LibraryEvent { Item = item, EventType = EventType.Update } }, EventType.Update).ConfigureAwait(false);
                     }
                     successCount++;
                 }
