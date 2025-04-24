@@ -311,7 +311,8 @@ namespace Emby.Plugin.Danmu
                             {
                                 var providerVal = media.Id;
                                 var commentId = media.CommentId;
-                                _logger.LogInformation("[{0}]匹配成功：name={1} ProviderId: {2}, CommentId={3}", scraper.Name, item.Name,
+                                _logger.LogInformation("[{0}]匹配成功：name={1} ProviderId: {2}, CommentId={3}",
+                                    scraper.Name, item.Name,
                                     providerVal, media.CommentId);
 
                                 // 更新epid元数据
@@ -326,6 +327,10 @@ namespace Emby.Plugin.Danmu
                                     break;
                                 }
                             }
+                        }
+                        catch (DanmuDownloadErrorException ex)
+                        {
+                            _logger.LogError(ex, "[{0}]弹幕下载失败，尝试匹配下一个. 失败原因={1}", scraper.Name, ex.Message);
                         }
                         catch (FrequentlyRequestException ex)
                         {
@@ -513,7 +518,8 @@ namespace Emby.Plugin.Danmu
                     }
 
                     var series = season.GetParent();
-                    foreach (var scraper in _scraperManager.All())
+                    var scrapers = _scraperManager.All();
+                    foreach (var scraper in scrapers)
                     {
                         try
                         {
@@ -551,10 +557,10 @@ namespace Emby.Plugin.Danmu
 
                             _logger.LogInformation("[{0}]匹配成功：name={1} season_number={2} ProviderId: {3}", scraper.Name,
                                 season.Name, season.IndexNumber, mediaId);
-                            if (!Config.OpenAllSource)
-                            {
-                                break;
-                            }
+                            // if (!Config.OpenAllSource)
+                            // {
+                            //     break;
+                            // }
                         }
                         catch (FrequentlyRequestException ex)
                         {
@@ -603,7 +609,8 @@ namespace Emby.Plugin.Danmu
                         episodes = episodesWithoutSP;
                     }
 
-                    foreach (var scraper in _scraperManager.All())
+                    var scrapers = _scraperManager.All();
+                    foreach (var scraper in scrapers)
                     {
                         try
                         {
@@ -678,14 +685,28 @@ namespace Emby.Plugin.Danmu
                                         continue;
                                     }
 
-                                    // 下载弹幕
-                                    await this.DownloadDanmu(scraper, episode, commentId).ConfigureAwait(false);
+                                    try
+                                    {
+                                        // 下载弹幕
+                                        await this.DownloadDanmu(scraper, episode, commentId).ConfigureAwait(false);
+                                    }
+                                    catch (DanmuDownloadErrorException ex)
+                                    {
+                                        _logger.LogInformation("[{0}]弹幕下载失败，尝试匹配下一个. 失败原因={1}", scraper.Name, ex.Message);
+                                        continue;
+                                    }
                                 }
                                 else
                                 {
                                     _logger.LogInformation("[{0}]刷新弹幕失败, 集数不一致。video: {1}.{2} 弹幕数：{3} 集数：{4}",
                                         scraper.Name, indexNumber, episode.Name, dabmuEpisodesCount, episodes.Count);
                                 }
+                            }
+                            
+                            if (dabmuEpisodesCount < episodes.Count)
+                            {
+                                _logger.LogInformation("[{0}]未完全匹配，尝试下个插件继续匹配，媒体数={1}. 完成匹配数={2}, 未匹配数={3}, 弹幕工具={4}", season.Name, episodes.Count(), dabmuEpisodesCount, episodes.Count-dabmuEpisodesCount, scraper.Name);
+                                continue;
                             }
 
                             if (!Config.OpenAllSource)
@@ -754,6 +775,10 @@ namespace Emby.Plugin.Danmu
                                 // 下载弹幕xml文件
                                 await this.DownloadDanmu(scraper, item, episode.CommentId).ConfigureAwait(false);
                             }
+                        }
+                        catch (DanmuDownloadErrorException ex)
+                        {
+                            _logger.LogError(ex, "[{0}]弹幕下载失败，尝试匹配下一个. 失败原因={1}", scraper.Name, ex.Message);
                         }
                         catch (FrequentlyRequestException ex)
                         {
@@ -936,7 +961,7 @@ namespace Emby.Plugin.Danmu
                     {
                         _logger.LogInformation("[{0}]弹幕内容少于1KB，忽略处理：{1}.{2}", scraper.Name, item.IndexNumber,
                             item.Name);
-                        return;
+                        throw new DanmuDownloadErrorException("弹幕内容少于1KB");
                     }
 
                     await this.SaveDanmu(scraper, item, bytes);
@@ -950,6 +975,11 @@ namespace Emby.Plugin.Danmu
             }
             catch (Exception ex)
             {
+                if (ex is DanmuDownloadErrorException)
+                {
+                    throw;
+                }
+                
                 _memoryCache.Remove(checkDownloadedKey);
                 _logger.LogError(ex, "[{0}]Exception handled download danmu file. name={1}", scraper.Name, item.Name);
             }
