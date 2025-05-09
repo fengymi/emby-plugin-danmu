@@ -34,7 +34,7 @@ namespace Emby.Plugin.Danmu
             { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30) };
 
         private readonly MemoryCacheEntryOptions _danmuUpdatedExpiredOption = new MemoryCacheEntryOptions()
-            { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) };
+            { AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(7) };
 
         private readonly ILibraryManager _libraryManager;
         private readonly ILogger _logger;
@@ -678,7 +678,7 @@ namespace Emby.Plugin.Danmu
                                     var danmuXmlPath = Path.Combine(episode.ContainingFolderPath, episode.GetDanmuXmlPath(scraper.ProviderId));
                                     var lastWriteTime = this._fileSystem.GetLastWriteTime(danmuXmlPath);
                                     var diff = DateTime.Now - lastWriteTime;
-                                    if (diff.TotalSeconds < 3600)
+                                    if (diff.TotalSeconds < 3600 * 24 * 7)
                                     {
                                         // 
                                         _logger.Info("{0}弹幕文件在1小时内更新过, 忽略， 弹幕文件={1}", episode.Name, danmuXmlPath);
@@ -999,7 +999,7 @@ namespace Emby.Plugin.Danmu
 
             var lastWriteTime = this._fileSystem.GetLastWriteTime(danmuPath);
             var diff = DateTime.Now - lastWriteTime;
-            return diff.TotalSeconds < 300;
+            return diff.TotalSeconds < 3600 * 24 * 7;
         }
 
         private async Task SaveDanmu(AbstractScraper scraper, BaseItem item, byte[] bytes)
