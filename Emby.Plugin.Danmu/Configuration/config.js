@@ -46,7 +46,6 @@ define(
                     container.querySelector('#current_version').textContent = "v" + config.Version;
 
                     container.querySelector('#ToAss').checked = config.ToAss;
-                    // container.querySelector('#OpenAllSource').checked = config.OpenAllSource;
                     container.querySelector('#AssFont').value = config.AssFont;
                     container.querySelector('#AssFontSize').value = config.AssFontSize;
                     container.querySelector('#AssTextOpacity').value = config.AssTextOpacity;
@@ -56,53 +55,66 @@ define(
                     container.querySelector('#WithRelatedDanmu').checked = config.Dandan.WithRelatedDanmu;
                     container.querySelector('#ChConvert').value = config.Dandan.ChConvert;
 
-                    var html = '';
-                    // config.Scrapers.forEach(function (e) {
-                    //     html += '<div class="listItem listItem-border sortableOption sortItem" data-sort="' + e + '">';
-                    //     html += '    <label class="listItemCheckboxContainer emby-checkbox-label">';
-                    //     html += '        <input type="checkbox" is="emby-checkbox" class="chkEnableCodec emby-checkbox emby-checkbox-focusring" name="ScraperItem" ' + (e.Enable ? 'checked' : '') + ' value="' + e.Name + '" >';
-                    //     html += '        <span class="checkboxLabel" style="width:200px" >' + e.Name + '</span>';
-                    //     html += '    </label>';
-                    //     html += '    <div class="listItemBody two-line listItemBodyText"></div>';
-                    //     html += '    <i class="listViewDragHandle dragHandle md-icon listItemIcon listItemIcon-transparent">a</i>';
-                    //     // html += '    <button type="button" is="paper-icon-button-light" title="上" class="btnSortable paper-icon-button-light btnSortableMoveUp btnViewItemUp" data-pluginindex="2"><span class="material-icons keyboard_arrow_up"></span></button>';
-                    //     // html += '    <button type="button" is="paper-icon-button-light" title="下" class="btnSortable paper-icon-button-light btnSortableMoveDown btnViewItemDown" data-pluginindex="0"><span class="material-icons keyboard_arrow_down"></span></button>';
-                    //     html += '</div>';
-                    //     html += '\r\n';
-                    // });
+                    var scrapersElement = container.querySelector('#Scrapers');
+                    scrapersElement.innerHTML = ''; // 清空旧内容
+
                     config.Scrapers.forEach(function (e, index) {
-                        html += '<div class="listItem listItem-hoverable drop-target ordered-drop-target-y" data-action="none" data-index="' + index + '" tabindex="0" draggable="true">';
-                        html += '    <div class="listItem-content listItem-content-margin listItem-content-bg listItemContent-touchzoom listItem-border listItem-border-offset-square">';
-                        html += '        <label data-action="toggleitemchecked"' +
-                            '                   class="itemAction listItem-emby-checkbox-label emby-checkbox-label secondaryText">' +
-                            '                <input tabindex="-1" name="ScraperItem" class="chkItemCheckbox emby-checkbox emby-checkbox-notext" is="emby-checkbox" type="checkbox" '+ (e.Enable ? "checked": "") + ' value="' + e.Name + '" />' +
-                            '                <span class="checkboxLabel listItem-checkboxLabel"></span>' +
-                            '            </label>' +
-                            '            <div class="listItemBody itemAction listItemBody-noleftpadding listItemBody-draghandle listItemBody-reduceypadding listItemBody-1-lines">' +
-                            '                <div class="listItemBodyText listItemBodyText-lf">' + e.Name + '</div>' +
-                            '            </div>' +
-                            '            <i class="listViewDragHandle dragHandle md-icon listItemIcon listItemIcon-transparent"></i>' +
-                            '       </div>'
-                        html += '</div>';
-                        html += '\r\n';
+                        var item = document.createElement('div');
+                        item.className = 'listItem listItem-hoverable drop-target ordered-drop-target-y';
+                        item.setAttribute('data-action', 'none');
+                        item.setAttribute('data-index', index);
+                        item.setAttribute('tabindex', '0');
+                        item.setAttribute('draggable', 'true');
+                        item.dataset.name = e.Name; // 用于标识唯一 scraper 名称
+
+                        item.innerHTML = `
+                            <div class="listItem-content listItem-content-margin listItem-content-bg listItemContent-touchzoom listItem-border listItem-border-offset-square">
+                                <label data-action="toggleitemchecked"
+                                       class="itemAction listItem-emby-checkbox-label emby-checkbox-label secondaryText">
+                                    <input tabindex="-1" name="ScraperItem" class="chkItemCheckbox emby-checkbox emby-checkbox-notext" is="emby-checkbox" type="checkbox" ${e.Enable ? "checked" : ""} value="${e.Name}" />
+                                    <span class="checkboxLabel listItem-checkboxLabel"></span>
+                                </label>
+                                <div class="listItemBody itemAction listItemBody-noleftpadding listItemBody-draghandle listItemBody-reduceypadding listItemBody-1-lines">
+                                    <div class="listItemBodyText listItemBodyText-lf">${e.Name}</div>
+                                </div>
+                                <i class="listViewDragHandle dragHandle md-icon listItemIcon listItemIcon-transparent"></i>
+                           </div>
+                        `;
+
+                        // 拖拽开始事件
+                        item.ondragstart = function (event) {
+                            event.dataTransfer.setData("text/plain", item.dataset.name); // 使用名称作为标识符
+                            item.classList.add('dragging');
+                        };
+
+                        scrapersElement.appendChild(item);
                     });
 
-                    // container.querySelector('#Scrapers').empty().append(html);
-                    var scrapersElement = container.querySelector('#Scrapers');
-                    // 清空元素内容
-                    while (scrapersElement.firstChild) {
-                        scrapersElement.removeChild(scrapersElement.firstChild);
-                    }
-                    // 创建一个新的元素来承载 HTML 内容，如果 html 是一个字符串
-                    // var div = document.createElement('div');
-                    // div.innerHTML = html;
-                    // // 现在，将创建的元素内的子节点逐个追加到目标元素
-                    // while (div.firstChild) {
-                    //     scrapersElement.appendChild(div.firstChild);
-                    // }
-                    scrapersElement.innerHTML = html;
+                    // 设置拖拽目标区域（容器）
+                    scrapersElement.ondragover = function (event) {
+                        event.preventDefault(); // 必须阻止默认行为才能触发 drop
+                    };
 
-                    // setButtons();
+                    scrapersElement.ondrop = function (event) {
+                        event.preventDefault();
+                        const draggedName = event.dataTransfer.getData("text/plain");
+                        const draggedItem = scrapersElement.querySelector(`[data-name="${draggedName}"]`);
+
+                        if (!draggedItem) return;
+
+                        // 获取插入位置
+                        const mouseY = event.clientY;
+                        const children = Array.from(scrapersElement.children);
+                        let targetIndex = children.findIndex(child => {
+                            const rect = child.getBoundingClientRect();
+                            return mouseY < rect.top + rect.height / 2;
+                        });
+
+                        if (targetIndex === -1) targetIndex = children.length;
+
+                        scrapersElement.insertBefore(draggedItem, children[targetIndex]);
+                    };
+
                     Dashboard.hideLoadingMsg();
                 });
             }
@@ -111,13 +123,11 @@ define(
                 Dashboard.showLoadingMsg();
                 promise.then(Dashboard.hideLoadingMsg, Dashboard.hideLoadingMsg);
             }
-            
+
             function onLoad() {
-                // wrapLoading(Promise.all([
-                //     loadConfiguration(),
-                // ]));
                 loadConfiguration();
             }
+
             container.addEventListener('viewshow', onLoad);
 
             container.querySelector('#TemplateConfigForm')
@@ -125,26 +135,28 @@ define(
                     Dashboard.showLoadingMsg();
                     ApiClient.getPluginConfiguration(TemplateConfig.pluginUniqueId).then(function (config) {
                         config.ToAss = document.querySelector('#ToAss').checked;
-                        // config.OpenAllSource = document.querySelector('#OpenAllSource').checked;
                         config.AssFont = document.querySelector('#AssFont').value;
                         config.AssFontSize = document.querySelector('#AssFontSize').value;
                         config.AssTextOpacity = document.querySelector('#AssTextOpacity').value;
                         config.AssLineCount = document.querySelector('#AssLineCount').value;
                         config.AssSpeed = document.querySelector('#AssSpeed').value;
 
+                        // 获取当前排序后的 scraper 列表
                         var scrapers = [];
                         let uniqScrapers = new Set();
-                        document.querySelectorAll('input[name="ScraperItem"]').forEach(function (inputElem) {
-                            if (uniqScrapers.has(inputElem.value)) {
-                                return;
-                            }
-                            
+
+                        container.querySelectorAll('#Scrapers > .listItem')?.forEach(function (item) {
+                            const inputElem = item.querySelector('input[name="ScraperItem"]');
+                            if (!inputElem || uniqScrapers.has(inputElem.value)) return;
                             uniqScrapers.add(inputElem.value);
-                            var scraper = {};
-                            scraper.Name = inputElem.value;
-                            scraper.Enable = inputElem.checked;
+
+                            var scraper = {
+                                Name: inputElem.value,
+                                Enable: inputElem.checked
+                            };
                             scrapers.push(scraper);
                         });
+
                         config.Scrapers = scrapers;
 
                         var dandan = {};
@@ -160,31 +172,6 @@ define(
                     e.preventDefault();
                     return false;
                 });
-
-            // container.addEventListener('DOMContentLoaded', function () {
-            //     setButtons();
-            //     // container.querySelectorAll('.btnViewItemDown').forEach()
-            //     container.addEventListener('click', function (e) {
-            //         // 检查是否点击了.btnViewItemDown按钮
-            //         if (e.target && e.target.matches('.btnViewItemDown')) {
-            //             var cCard = e.target.closest('.sortItem');
-            //             var tCard = cCard.nextElementSibling;
-            //             if (tCard && tCard.matches('.sortItem')) {
-            //                 cCard.parentNode.insertBefore(tCard, cCard);
-            //                 setButtons();
-            //             }
-            //         }
-            //         // 检查是否点击了.btnViewItemUp按钮
-            //         if (e.target && e.target.matches('.btnViewItemUp')) {
-            //             var cCard = e.target.closest('.sortItem');
-            //             var tCard = cCard.previousElementSibling;
-            //             if (tCard && tCard.matches('.sortItem')) {
-            //                 cCard.parentNode.insertBefore(cCard, tCard);
-            //                 setButtons();
-            //             }
-            //         }
-            //     });
-            // });
         }
 
         Object.assign(View.prototype, BaseView.prototype);
