@@ -1,0 +1,58 @@
+name: "🚀 Publish Plugin"
+
+on:
+  push:
+    tags: ["*"]
+
+env:
+  dotnet-version: 6.0.x
+  python-version: 3.8
+  project: Emby.Plugin.Danmu/Emby.Plugin.Danmu.csproj
+  artifact: danmu
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    name: Build & Release
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Inject DANDNA Api ID
+        env:
+          DANDAN_API_ID: ${{ secrets.DANDAN_API_ID }}
+          DANDAN_API_SECRET: ${{ secrets.DANDAN_API_SECRET }}
+        run: |
+          sed -i "s/API_ID = \"\"/API_ID = \"$DANDAN_API_ID\"/g" Emby.Plugin.Danmu/Scrapers/Dandan/DandanApi.cs
+          sed -i "s/API_SECRET = \"\"/API_SECRET = \"$DANDAN_API_SECRET\"/g" Emby.Plugin.Danmu/Scrapers/Dandan/DandanApi.cs
+      - name: Get tags (For CHANGELOG)
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v3
+        id: dotnet
+        with:
+          dotnet-version: ${{ env.dotnet-version }}
+      - name: Change default dotnet version
+        run: |
+          echo '{"sdk":{"version": "${{ steps.dotnet.outputs.dotnet-version }}"}}' > ./global.json
+      - name: Initialize workflow variables
+        id: vars
+        run: |
+          VERSION=$(echo "${GITHUB_REF#refs/*/}" | sed s/^v//)
+          VERSION="$VERSION.0"
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "APP_NAME=$(echo '${{ github.repository }}' | awk -F '/' '{print $2}')" >> $GITHUB_OUTPUT
+      - name: Build
+        run: |
+          dotnet restore ${{ env.project }} --no-cache
+          dotnet publish --nologo --no-restore --configuration=Release --framework=netstandard2.0 -p:Version=${{steps.vars.outputs.VERSION}} ${{ env.project }}
+          mkdir -p artifacts
+          zip -j ./artifacts/${{ env.artifact }}_${{steps.vars.outputs.VERSION}}.zip ./Emby.Plugin.Danmu/bin/Release/netstandard2.0/Emby.Plugin.Danmu.dll
+      - name: Publish release
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: ./artifacts/${{ env.artifact }}_*.zip
+          tag: ${{ github.ref }}
+          release_name: '${{ github.ref_name }}'
+          overwrite: true
+          file_glob: true
