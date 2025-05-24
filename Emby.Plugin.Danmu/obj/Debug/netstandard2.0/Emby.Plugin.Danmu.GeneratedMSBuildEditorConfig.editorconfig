@@ -1,8 +1,0 @@
-is_global = true
-build_property.RootNamespace = Emby.Plugin.Danmu
-build_property.ProjectDir = D:\桌面\danmuDLL\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\
-build_property.EnableComHosting = 
-build_property.EnableGeneratedComInterfaceComImportInterop = 
-build_property.CsWinRTUseWindowsUIXamlProjections = false
-build_property.EffectiveAnalysisLevelStyle = 
-build_property.EnableCodeStyleSeverity = 
