@@ -1,0 +1,56 @@
+D:\桌面\danmuDLL\修改版-修复优酷弹幕下载-弹幕源拖拽问题\emby-plugin-danmu-main\Emby.Plugin.Danmu\bin\Debug\netstandard2.0\Emby.Plugin.Danmu.deps.json
+d:\桌面\danmuDLL\修改版-修复优酷弹幕下载-弹幕源拖拽问题\emby-plugin-danmu-main\Emby.Plugin.Danmu\bin\Debug\netstandard2.0\Emby.Plugin.Danmu.dll
+d:\桌面\danmuDLL\修改版-修复优酷弹幕下载-弹幕源拖拽问题\emby-plugin-danmu-main\Emby.Plugin.Danmu\bin\Debug\netstandard2.0\Emby.Plugin.Danmu.pdb
+d:\桌面\danmuDLL\修改版-修复优酷弹幕下载-弹幕源拖拽问题\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.AssemblyReference.cache
+d:\桌面\danmuDLL\修改版-修复优酷弹幕下载-弹幕源拖拽问题\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.GeneratedMSBuildEditorConfig.editorconfig
+d:\桌面\danmuDLL\修改版-修复优酷弹幕下载-弹幕源拖拽问题\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.AssemblyInfoInputs.cache
+d:\桌面\danmuDLL\修改版-修复优酷弹幕下载-弹幕源拖拽问题\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.AssemblyInfo.cs
+d:\桌面\danmuDLL\修改版-修复优酷弹幕下载-弹幕源拖拽问题\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.CoreCompileInputs.cache
+d:\桌面\danmuDLL\修改版-修复优酷弹幕下载-弹幕源拖拽问题\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.dll
+d:\桌面\danmuDLL\修改版-修复优酷弹幕下载-弹幕源拖拽问题\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.pdb
+d:\桌面\danmuDLL\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.AssemblyReference.cache
+d:\桌面\danmuDLL\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.GeneratedMSBuildEditorConfig.editorconfig
+d:\桌面\danmuDLL\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.AssemblyInfoInputs.cache
+d:\桌面\danmuDLL\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.AssemblyInfo.cs
+d:\桌面\danmuDLL\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.CoreCompileInputs.cache
+d:\桌面\danmuDLL\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.dll
+d:\桌面\danmuDLL\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.pdb
+D:\桌面\danmuDLL\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\bin\Debug\netstandard2.0\Emby.Plugin.Danmu.deps.json
+d:\桌面\danmuDLL\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\bin\Debug\netstandard2.0\Emby.Plugin.Danmu.dll
+d:\桌面\danmuDLL\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\bin\Debug\netstandard2.0\Emby.Plugin.Danmu.pdb
+D:\桌面\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\bin\Debug\netstandard2.0\Emby.Plugin.Danmu.deps.json
+d:\桌面\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\bin\Debug\netstandard2.0\Emby.Plugin.Danmu.dll
+d:\桌面\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\bin\Debug\netstandard2.0\Emby.Plugin.Danmu.pdb
+d:\桌面\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.AssemblyReference.cache
+d:\桌面\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.GeneratedMSBuildEditorConfig.editorconfig
+d:\桌面\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.AssemblyInfoInputs.cache
+d:\桌面\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.AssemblyInfo.cs
+d:\桌面\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.CoreCompileInputs.cache
+d:\桌面\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.dll
+d:\桌面\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.pdb
+d:\桌面\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.Fody.CopyLocal.cache
+d:\桌面\测试\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.Fody.RuntimeCopyLocal.cache
+D:\桌面\danmuDLL\成功添加bilbili源并下载版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\bin\Debug\netstandard2.0\Emby.Plugin.Danmu.deps.json
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\bin\Debug\netstandard2.0\Emby.Plugin.Danmu.dll
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\bin\Debug\netstandard2.0\Emby.Plugin.Danmu.pdb
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.AssemblyReference.cache
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.GeneratedMSBuildEditorConfig.editorconfig
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.AssemblyInfoInputs.cache
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.AssemblyInfo.cs
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.CoreCompileInputs.cache
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.dll
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.pdb
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.Fody.CopyLocal.cache
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.Fody.RuntimeCopyLocal.cache
+D:\桌面\danmuDLL\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\bin\Debug\netstandard2.0\Emby.Plugin.Danmu.deps.json
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\bin\Debug\netstandard2.0\Emby.Plugin.Danmu.dll
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\bin\Debug\netstandard2.0\Emby.Plugin.Danmu.pdb
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.AssemblyReference.cache
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.GeneratedMSBuildEditorConfig.editorconfig
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.AssemblyInfoInputs.cache
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.AssemblyInfo.cs
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.CoreCompileInputs.cache
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.Fody.CopyLocal.cache
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.csproj.Fody.RuntimeCopyLocal.cache
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.dll
+d:\桌面\danmuDLL\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\emby-plugin-danmu-main\Emby.Plugin.Danmu\obj\Debug\netstandard2.0\Emby.Plugin.Danmu.pdb

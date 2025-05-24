@@ -1,0 +1,121 @@
+{
+  "format": 1,
+  "restore": {
+    "D:\\桌面\\danmuDLL\\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\\emby-plugin-danmu-main\\Emby.Plugin.Danmu\\Emby.Plugin.Danmu.csproj": {}
+  },
+  "projects": {
+    "D:\\桌面\\danmuDLL\\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\\emby-plugin-danmu-main\\Emby.Plugin.Danmu\\Emby.Plugin.Danmu.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "D:\\桌面\\danmuDLL\\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\\emby-plugin-danmu-main\\Emby.Plugin.Danmu\\Emby.Plugin.Danmu.csproj",
+        "projectName": "Emby.Plugin.Danmu",
+        "projectPath": "D:\\桌面\\danmuDLL\\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\\emby-plugin-danmu-main\\Emby.Plugin.Danmu\\Emby.Plugin.Danmu.csproj",
+        "packagesPath": "C:\\Users\\42960\\.nuget\\packages\\",
+        "outputPath": "D:\\桌面\\danmuDLL\\成功添加bilbili源并下载版本 - 2025.05.24 - 22：33 -成功下载电影、剧集版本\\emby-plugin-danmu-main\\Emby.Plugin.Danmu\\obj\\",
+        "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "D:\\Microsoft\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
+        "configFilePaths": [
+          "C:\\Users\\42960\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.0"
+        ],
+        "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
+          "C:\\Program Files\\dotnet\\library-packs": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.0": {
+            "targetAlias": "netstandard2.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        },
+        "restoreAuditProperties": {
+          "enableAudit": "true",
+          "auditLevel": "low",
+          "auditMode": "direct"
+        },
+        "SdkAnalysisLevel": "9.0.200"
+      },
+      "frameworks": {
+        "netstandard2.0": {
+          "targetAlias": "netstandard2.0",
+          "dependencies": {
+            "ComposableAsync.Core": {
+              "target": "Package",
+              "version": "[1.3.0, )"
+            },
+            "Costura.Fody": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[6.0.0, )"
+            },
+            "Fody": {
+              "include": "Runtime, Build, Native, ContentFiles, Analyzers, BuildTransitive",
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[6.9.2, )"
+            },
+            "Google.Protobuf": {
+              "target": "Package",
+              "version": "[3.31.0, )"
+            },
+            "MediaBrowser.Server.Core": {
+              "target": "Package",
+              "version": "[4.8.5, )"
+            },
+            "Microsoft.Extensions.Caching.Abstractions": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
+            "Microsoft.Extensions.Caching.Memory": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
+            "Microsoft.Extensions.Logging.Abstractions": {
+              "target": "Package",
+              "version": "[2.2.0, )"
+            },
+            "NETStandard.Library": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[2.0.3, )",
+              "autoReferenced": true
+            },
+            "SharpZipLib.NETStandard": {
+              "target": "Package",
+              "version": "[1.0.7, )"
+            },
+            "System.Net.Http.Json": {
+              "target": "Package",
+              "version": "[8.0.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.203\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
