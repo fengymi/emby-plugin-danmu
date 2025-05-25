@@ -23,15 +23,12 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
     public class IqiyiApi : AbstractApi
     {
         private const string MOBILE_USER_AGENT =
-            "Mozilla/5.0 (Linux; Android 8.0; Nexus 5 Build/MRA58N) AppleWebKit/536.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36";
+            "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36 Edg/136.0.0.0";
 
         private new const string HTTP_USER_AGENT = MOBILE_USER_AGENT;
         private static readonly Regex regVideoInfo = new Regex(@"""videoInfo"":(\{.+?\}),""", RegexOptions.Compiled);
-        // 备用或更宽松的 videoInfo 正则表达式，以防逗号不是严格的结束符
-        private static readonly Regex regVideoInfoFallback = new Regex(@"""videoInfo""\s*:\s*(\{.+?\}[\s,\]\}])", RegexOptions.Compiled);
         private static readonly Regex regAlbumInfo = new Regex(@"""albumInfo"":(\{.+?\}),""", RegexOptions.Compiled);
-        // 新增：用于匹配包含 tvid 的 iframe deeplink src 的正则表达式
-        private static readonly Regex regIframeDeeplinkTvid = new Regex(@"<iframe[^>]*src=[""']iqiyi://mobile/player\?[^""']*tvid=(\d+)[^""']*[""'][^>]*>", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+        
         public IqiyiApi(ILogManager logManager, IHttpClient httpClient)
             : base(logManager.getDefaultLogger(typeof(IqiyiApi).ToString()), httpClient)
         {
@@ -103,19 +100,10 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
                 videoInfo.Epsodelist = new List<IqiyiEpisode>() {
                     new IqiyiEpisode() {TvId = videoInfo.TvId, Order = 1, Name = videoInfo.VideoName, Duration = duration.ToString(@"hh\:mm\:ss"), PlayUrl = videoInfo.VideoUrl}
                 };
-                if (videoInfo.TvId <= 0)
-                {
-                    _logger.Warn($"[IQIYI_API] GetVideoAsync: 为电影 '{videoInfo.VideoName}' (LinkId: {id}) 获取到的 TvId 无效: {videoInfo.TvId}。Epsodelist 中的 TvId 也将无效。");
-                }
             }
             else
             { // 电视剧需要再获取剧集信息
                 videoInfo.Epsodelist = await this.GetEpisodesAsync($"{videoInfo.AlbumId}", videoInfo.VideoCount, cancellationToken).ConfigureAwait(false);
-            }
-
-            if (videoInfo.TvId <= 0)
-            {
-                _logger.Warn($"[IQIYI_API] GetVideoAsync: 最终为 LinkId '{id}' 返回的 videoInfo 中的 TvId 仍然无效: {videoInfo.TvId}。");
             }
 
             _memoryCache.Set<IqiyiHtmlVideoInfo?>(cacheKey, videoInfo, expiredOption);
@@ -145,8 +133,7 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
         var url = $"https://m.iqiyi.com/v_{id}.html";
         var defaultHttpRequestOptions = GetDefaultHttpRequestOptions(url, null, cancellationToken);
         defaultHttpRequestOptions.UserAgent = HTTP_USER_AGENT;
-        // GetSelfResultAsync 的回调函数期望返回一个字符串（JSON），然后由 GetSelfResultAsync 进行反序列化。
-        var videoInfo = await httpClient.GetSelfResultAsync<IqiyiHtmlVideoInfo?>(defaultHttpRequestOptions, response =>
+        var videoInfo = await httpClient.GetSelfResultAsync<IqiyiHtmlVideoInfo>(defaultHttpRequestOptions, response =>
         {
             
             // 确保响应状态码为成功
@@ -156,40 +143,22 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
                 using (var responseStream = response.Content)
                 using (var reader = new StreamReader(responseStream, Encoding.UTF8))
                 {
-                    _logger.Debug($"[IQIYI_API] GetVideoBaseAsync: 开始读取 LinkId '{id}' 的HTML内容。");
                     var htmlResult = reader.ReadToEnd();
-                    _logger.Debug($"[IQIYI_API] GetVideoBaseAsync: LinkId '{id}' 的HTML内容 (前1000字符): {htmlResult.Substring(0, Math.Min(1000, htmlResult.Length))}");
-
                     var albumJson = regAlbumInfo.FirstMatchGroup(htmlResult);
-                    _logger.Debug($"[IQIYI_API] GetVideoBaseAsync: LinkId '{id}' 提取的 albumJson: {albumJson}");
                     var albumInfo = albumJson.FromJson<IqiyiHtmlAlbumInfo>();
-
                     var videoJson = regVideoInfo.FirstMatchGroup(htmlResult);
-                    if (string.IsNullOrEmpty(videoJson))
-                    {
-                        _logger.Debug($"[IQIYI_API] GetVideoBaseAsync: LinkId '{id}' 使用主要正则 regVideoInfo 未匹配到 videoJson，尝试备用正则。");
-                        Match fallbackMatch = regVideoInfoFallback.Match(htmlResult);
-                        if (fallbackMatch.Success && fallbackMatch.Groups.Count > 1) {
-                            videoJson = fallbackMatch.Groups[1].Value.TrimEnd(',', ']', '}'); // 清理末尾可能的额外字符
-                             // 如果 videoJson 不是以 { 开头和 } 结尾，可能需要进一步处理，但通常 group 1 应该捕获完整的 JSON 对象
-                            if (!videoJson.StartsWith("{")) videoJson = "{" + videoJson;
-                            if (!videoJson.EndsWith("}")) videoJson = videoJson + "}";
-                        }
-                    }
-                    _logger.Debug($"[IQIYI_API] GetVideoBaseAsync: LinkId '{id}' 提取的 videoJson: {videoJson}");
                     var videoInfo = videoJson.FromJson<IqiyiHtmlVideoInfo>();
-
                     if (videoInfo != null)
                     {
-                        _logger.Info($"[IQIYI_API] GetVideoBaseAsync: LinkId '{id}' 解析得到的 videoInfo - TvId: {videoInfo.TvId}, AlbumId: {videoInfo.AlbumId}, VideoName: '{videoInfo.VideoName}'");
                         if (albumInfo != null)
                         {
                             videoInfo.VideoCount = albumInfo.VideoCount;
                         }
-                        return videoJson; // 返回原始的 JSON 字符串
+
+                        return videoInfo.ToJson();
                     }
-                    _logger.Warn($"[IQIYI_API] GetVideoBaseAsync: LinkId '{id}' 未能从 videoJson ('{videoJson}') 解析出 videoInfo 对象。");
                 }
+
                 return null;
             }
             else
@@ -203,10 +172,9 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
         if (videoInfo != null)
         {
             this._memoryCache.Set(cacheKey, videoInfo, expiredOption);
+            return videoInfo;
         }
-        // 即使 videoInfo 为 null，也缓存它，以避免短时间内对无效ID的重复请求
-        else { this._memoryCache.Set<IqiyiHtmlVideoInfo?>(cacheKey, null, expiredOption); }
-        return videoInfo;
+        return null;
     }
 
     /// <summary>
