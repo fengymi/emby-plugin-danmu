@@ -843,7 +843,7 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
                     try
                     {
                         string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        _logger.Debug($"EnsureSessionCookie - 首页响应体 (前5000字符，当Set-Cookie未找到时): {responseBody.Substring(0, Math.Min(responseBody.Length, 5000))}");
+                        _logger.Debug($"EnsureSessionCookie - 首页响应体 (前1000字符，当Set-Cookie未找到时): {responseBody.Substring(0, Math.Min(responseBody.Length, 1000))}");
                     }
                     catch (Exception readEx)
                     {
