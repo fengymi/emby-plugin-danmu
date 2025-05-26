@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Net;
-using System.Net.Http;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -29,9 +28,8 @@ namespace Emby.Plugin.Danmu.Scraper
         public AbstractApi(ILogger log, IHttpClient httpClient)
         {
             this._logger = log;
-            var handler = new HttpClientHandlerEx();
-            _cookieContainer = handler.CookieContainer;
-
+            var handler = new HttpClientHandlerEx(); // 还原：使用 HttpClientHandlerEx 初始化 CookieContainer
+            _cookieContainer = handler.CookieContainer; // 还原
             this.httpClient = httpClient;
             // httpClient.DefaultRequestHeaders.Add("user-agent", HTTP_USER_AGENT);
             _memoryCache = new MemoryCache(new MemoryCacheOptions());
@@ -88,8 +86,7 @@ namespace Emby.Plugin.Danmu.Scraper
 
         protected virtual string[] GetDefaultCookies(string? url = null) => null;
 
-        protected HttpRequestOptions GetDefaultHttpRequestOptions(string url, string? cookies = null,
-            CancellationToken cancellationToken = default)
+        protected HttpRequestOptions GetDefaultHttpRequestOptions(string url, string? cookies = null, CancellationToken cancellationToken = default) // 还原：参数名 cookies
         {
             HttpRequestOptions httpRequestOptions = new HttpRequestOptions
             {
@@ -97,8 +94,8 @@ namespace Emby.Plugin.Danmu.Scraper
                 UserAgent = $"{HTTP_USER_AGENT}",
                 TimeoutMs = 300000,
                 EnableHttpCompression = true,
-                RequestContentType = "application/json",
-                AcceptHeader = "application/json",
+                RequestContentType = "application/json", // 还原：取消注释
+                AcceptHeader = "application/json", // 还原：取消注释
                 CancellationToken = cancellationToken
             };
             
@@ -112,16 +109,43 @@ namespace Emby.Plugin.Danmu.Scraper
                 }
             }
 
-            var defaultCookies = GetDefaultCookies(url);
-            if (cookies != null)
+            // 还原：原始的 Cookie 处理逻辑
+            // 1. Try to use cookies from our managed _cookieContainer
+            var cookieHeaderFromManagedContainer = _cookieContainer.GetCookieHeader(new Uri(url));
+            if (!string.IsNullOrEmpty(cookieHeaderFromManagedContainer))
             {
-                requestHeaders["Cookie"] = cookies;
+                requestHeaders["Cookie"] = cookieHeaderFromManagedContainer;
+                _logger.Debug($"Using cookies from _cookieContainer for {url}: {cookieHeaderFromManagedContainer}");
             }
-            else if (defaultCookies != null && defaultCookies.Length > 0)
+            
+            // 2. From GetDefaultCookies(url)
+            string[] defaultCookiesArr = GetDefaultCookies(url);
+            if (defaultCookiesArr != null && defaultCookiesArr.Length > 0)
             {
-                requestHeaders["Cookie"] = string.Join(",", defaultCookies);
+                string cookieStr = string.Join(";", defaultCookiesArr);
+                if (requestHeaders.ContainsKey("Cookie") && !string.IsNullOrEmpty(requestHeaders["Cookie"]))
+                {
+                    requestHeaders["Cookie"] += ";" + cookieStr;
+                }
+                else
+                {
+                    requestHeaders["Cookie"] = cookieStr;
+                }
             }
 
+            // 3. From 'cookies' parameter
+            if (!string.IsNullOrEmpty(cookies)) // 还原：使用 'cookies' 参数
+            {
+                if (requestHeaders.ContainsKey("Cookie") && !string.IsNullOrEmpty(requestHeaders["Cookie"]))
+                {
+                    requestHeaders["Cookie"] += ";" + cookies;
+                }
+                else
+                {
+                    requestHeaders["Cookie"] = cookies;
+                }
+            }
+            
             return httpRequestOptions;
         }
 
@@ -141,8 +165,9 @@ namespace Emby.Plugin.Danmu.Scraper
         
         protected virtual Task LimitRequestFrequently()
         {
-            Thread.Sleep(1000);
-            return Task.CompletedTask;
+            // Thread.Sleep(1000);
+            // return Task.CompletedTask;
+            return Task.Delay(5000); // 还原：延迟改回 3000ms
         }
     }
 }

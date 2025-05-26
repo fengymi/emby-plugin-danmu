@@ -139,6 +139,7 @@ namespace Emby.Plugin.Danmu.Scraper.Youku
 
             var isMovieItemType = item is MediaBrowser.Controller.Entities.Movies.Movie;
             var media = new ScraperMedia();
+            media.ProviderId = this.ProviderId; // 设置 ProviderId
             if (video.Videos != null && video.Videos.Count > 0)
             {
                 foreach (var ep in video.Videos)

@@ -133,6 +133,7 @@ namespace Emby.Plugin.Danmu.Scraper.Dandan
             var media = new ScraperMedia();
 
             media.Id = id;
+            media.ProviderId = this.ProviderId; // 设置 ProviderId
             if (isMovieItemType && anime.Episodes != null && anime.Episodes.Count > 0)
             {
                 media.CommentId = $"{anime.Episodes[0].EpisodeId}";

@@ -19,6 +19,8 @@ using MediaBrowser.Controller.Library;
 using MediaBrowser.Model.Entities;
 using MediaBrowser.Model.Logging;
 using Microsoft.Extensions.Caching.Memory;
+using Emby.Plugin.Danmu.Scraper.Bilibili; // 为了访问 Bilibili.ScraperProviderId
+using Emby.Plugin.Danmu.Scraper.Iqiyi;   // 为了访问 Iqiyi.ScraperProviderId
 using IFileSystem = Emby.Plugin.Danmu.Core.IFileSystem;
 
 namespace Emby.Plugin.Danmu
@@ -309,19 +311,47 @@ namespace Emby.Plugin.Danmu
                             var media = await scraper.GetMedia(item, mediaId);
                             if (media != null)
                             {
-                                var providerVal = media.Id;
-                                var commentId = media.CommentId;
-                                _logger.LogInformation("[{0}]匹配成功：name={1} ProviderId: {2}, CommentId={3}",
-                                    scraper.Name, item.Name,
-                                    providerVal, media.CommentId);
+                                // media.ProviderId 应该由 scraper 的 GetMedia 方法设置。
+                                // 如果未设置，为安全起见在此处设置，但最好在 scraper 中完成。
+                                if (string.IsNullOrEmpty(media.ProviderId)) media.ProviderId = scraper.ProviderId;
+
+                                string idToUseForDanmakuProcessing = string.Empty;
+
+                                if (media.ProviderId == Bilibili.ScraperProviderId)
+                                {
+                                    // 对于B站电影, media.CommentId 应该是主内容的 ep_id
+                                    idToUseForDanmakuProcessing = media.CommentId;
+                                    if (string.IsNullOrEmpty(idToUseForDanmakuProcessing) && media.Episodes.Any())
+                                    {
+                                        idToUseForDanmakuProcessing = media.Episodes.First().CommentId; // 备选，使用第一个分P的 ep_id
+                                    }
+                                    _logger.LogInformation($"[{scraper.Name}] Bilibili Movie Add: 确定用于弹幕处理的 ep_id '{idToUseForDanmakuProcessing}'.");
+                                }
+                                else // 对于爱奇艺、腾讯、优酷等电影
+                                {
+                                    // 假设 media.CommentId 已被各自的 scraper 填充为 DownloadDanmu 方法直接需要的ID (例如爱奇艺的 TvId)
+                                    idToUseForDanmakuProcessing = media.CommentId;
+                                    _logger.LogInformation($"[{scraper.Name}] Non-Bilibili Movie Add: 使用 media.CommentId '{idToUseForDanmakuProcessing}' 进行弹幕处理.");
+                                }
+
+                                _logger.LogInformation("[{0}]匹配成功：name='{1}', SearchMediaId='{2}', IdForDanmakuProcessing='{3}'", 
+                                    scraper.Name, item.Name, mediaId, idToUseForDanmakuProcessing);
 
                                 // 更新epid元数据
-                                item.SetProviderId(scraper.ProviderId, providerVal);
+                                // 对于电影，ProviderId 存储的是搜索时用的ID (mediaId, 如B站的season_id, 爱奇艺的LinkId, 腾讯的cid, 优酷的show_id)
+                                item.SetProviderId(scraper.ProviderId, mediaId); 
+                                // 可以考虑额外存储一个特定于播放的 ep_id，如果 Emby 支持多个 ProviderId 或自定义字段
+                                // 例如: item.SetProviderId($"{scraper.ProviderId}_Playable", idToUseForDanmakuProcessing);
                                 item.UpdateToRepository(ItemUpdateType.MetadataEdit);
-                                // queueUpdateMeta.Add(item);
-
+                                
                                 // 下载弹幕
-                                await this.DownloadDanmu(scraper, item, commentId).ConfigureAwait(false);
+                                if (!string.IsNullOrEmpty(idToUseForDanmakuProcessing)) {
+                                    // 对于B站, DownloadDanmu 会调用 GetMediaEpisode 并传入此 ep_id 来获取 aid,cid
+                                    // 对于爱奇艺, DownloadDanmu 会直接使用此 TvId
+                                    await this.DownloadDanmu(scraper, item, idToUseForDanmakuProcessing).ConfigureAwait(false);
+                                } else {
+                                    _logger.Warn($"[{scraper.Name}]为电影 '{item.Name}' (SearchMediaId: {mediaId}) 未能从GetMedia结果中确定有效的ID (media.CommentId 或首个 episode 的 CommentId) 用于下载弹幕. media.Id='{media.Id}', media.CommentId='{media.CommentId}'");
+                                }
                                 if (!Config.OpenAllSource)
                                 {
                                     break;
@@ -359,13 +389,54 @@ namespace Emby.Plugin.Danmu
                             var providerVal = item.GetProviderId(scraper.ProviderId);
                             if (!string.IsNullOrEmpty(providerVal))
                             {
-                                var episode = await scraper.GetMediaEpisode(item, providerVal);
-                                if (episode != null)
+                                // providerVal 是存储的 season_id/media_id (例如 '41175')
+                                // 需要先调用 GetMedia 来获取包含实际 ep_id 的 ScraperMedia
+                                var media = await scraper.GetMedia(item, providerVal);
+                                if (media != null) // media.Id is LinkId for Iqiyi, BVID for Bilibili. media.CommentId is TvId for Iqiyi, ep_id for Bilibili.
                                 {
-                                    // 下载弹幕xml文件
-                                    await this.DownloadDanmu(scraper, item, episode.CommentId).ConfigureAwait(false);
-                                }
+                                    if (string.IsNullOrEmpty(media.ProviderId)) media.ProviderId = scraper.ProviderId;
 
+                                    string idForGetMediaEpisode = string.Empty;
+                                    if (media.ProviderId == Bilibili.ScraperProviderId)
+                                    {
+                                        idForGetMediaEpisode = media.CommentId; // 对于B站电影，这应该是主要内容的 ep_id
+                                        if (string.IsNullOrEmpty(idForGetMediaEpisode) && media.Episodes.Any())
+                                        {
+                                            idForGetMediaEpisode = media.Episodes.First().CommentId; // 备选方案
+                                        }
+                                        _logger.LogInformation($"[{scraper.Name}] B站电影更新：用于 GetMediaEpisode 的ID (ep_id): '{idForGetMediaEpisode}'.");
+                                    }
+                                    else // For Iqiyi, Tencent, Youku movies
+                                    {
+                                        // 这些提供商的 GetMediaEpisode 方法可能期望接收主要的媒体ID (providerVal)
+                                        // 或者，根据它们各自的实现，也可能期望接收特定的可播放ID (media.CommentId)。
+                                        // 我们假设这些提供商的电影 GetMediaEpisode 方法期望接收的是之前存储的ID (providerVal)。
+                                        // 如果它们的 GetMediaEpisode 方法被设计为接收 media.CommentId (例如，爱奇艺的 TvId)，那么就应该使用 media.CommentId。
+                                        // 对于腾讯视频，GetMediaEpisode 方法期望接收 cid (即 providerVal / media.Id)。
+                                        // 对于爱奇艺，GetMediaEpisode 方法期望接收 LinkId (即 providerVal / media.Id)。
+                                        // 对于优酷，GetMediaEpisode 方法期望接收 show_id (即 providerVal / media.Id)。
+                                        idForGetMediaEpisode = providerVal; // 使用最初存储的ID (LinkId, cid, show_id)
+                                        _logger.LogInformation($"[{scraper.Name}] 非B站 ({media.ProviderId}) 电影更新：用于 GetMediaEpisode 的ID: '{idForGetMediaEpisode}' (使用已存储的 providerVal). media.CommentId 为 '{media.CommentId}'");
+                                    }
+
+                                    if (!string.IsNullOrEmpty(idForGetMediaEpisode))
+                                    {
+                                        var episodeDetails = await scraper.GetMediaEpisode(item, idForGetMediaEpisode);
+                                        if (episodeDetails != null && !string.IsNullOrEmpty(episodeDetails.CommentId))
+                                        {
+                                            // episodeDetails.CommentId is the FINAL ID for danmaku (e.g. "aid,cid" for Bili, "TvId" for Iqiyi)
+                                            _logger.LogInformation("[{0}]为电影 '{1}' (ProviderVal: {2}, ID for GetMediaEpisode: {3}) 成功获取剧集信息，最终CommentId for Danmaku: {4}", scraper.Name, item.Name, providerVal, idForGetMediaEpisode, episodeDetails.CommentId);
+                                            await this.DownloadDanmu(scraper, item, episodeDetails.CommentId).ConfigureAwait(false);
+                                        } else
+                                        {
+                                             _logger.Warn($"[{scraper.Name}]为电影 '{item.Name}' (ProviderVal: {providerVal}, ID for GetMediaEpisode: {idForGetMediaEpisode}) 调用 GetMediaEpisode 返回了 null 或无效CommentId。");
+                                        }
+                                    } else {
+                                        _logger.Warn($"[{scraper.Name}]为电影 '{item.Name}' (ProviderVal: {providerVal}) 调用 GetMedia 后未能确定有效的 ID for GetMediaEpisode.");
+                                    }
+                                } else {
+                                    _logger.Warn($"[{scraper.Name}]为电影 '{item.Name}' (ProviderVal: {providerVal}) 调用 GetMedia 返回了 null。");
+                                }
                                 // TODO：兼容支持用户设置seasonId？？？
                                 break;
                             }

@@ -125,18 +125,32 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
 
 
             var media = new ScraperMedia();
-            media.Id = id; // 使用url编码后的id
+            media.Id = id; // 使用url编码后的id (LinkId)
+            media.ProviderId = this.ProviderId;
             if (isMovieItemType && video.Epsodelist != null && video.Epsodelist.Count > 0)
             {
-                media.CommentId = $"{video.Epsodelist[0].TvId}";
+                var tvId = video.Epsodelist[0].TvId;
+                if (tvId > 0) // 确保 TvId 有效
+                {
+                    media.CommentId = $"{tvId}";
+                    log.Info($"[IQIYI] GetMedia: 电影 '{item.Name}' (LinkId: {id}) 设置 CommentId 为 TvId: {tvId}");
+                }
+                else
+                {
+                    log.Warn($"[IQIYI] GetMedia: 电影 '{item.Name}' (LinkId: {id}) 获取到的 TvId 无效 ({tvId})，media.CommentId 将为空。");
+                }
             }
 
             if (video.Epsodelist != null && video.Epsodelist.Count > 0)
             {
                 foreach (var ep in video.Epsodelist)
                 {
-                    media.Episodes.Add(new ScraperEpisode()
-                        { Id = $"{ep.LinkId}", CommentId = $"{ep.TvId}", Title = ep.Name });
+                    var episodeTvId = ep.TvId;
+                    var episodeCommentId = (episodeTvId > 0) ? $"{episodeTvId}" : string.Empty;
+                    if (episodeTvId <= 0) {
+                        log.Warn($"[IQIYI] GetMedia: 剧集 '{ep.Name}' (LinkId: {ep.LinkId}) 的 TvId 无效 ({episodeTvId})，ScraperEpisode.CommentId 将为空。");
+                    }
+                    media.Episodes.Add(new ScraperEpisode() { Id = $"{ep.LinkId}", CommentId = episodeCommentId, Title = ep.Name });
                 }
             }
 
@@ -157,8 +171,13 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
             {
                 return null;
             }
-
-            return new ScraperEpisode() { Id = id, CommentId = $"{video.TvId}", Title = video.VideoName };
+            var tvId = video.TvId;
+            if (tvId <= 0)
+            {
+                log.Warn($"[IQIYI] GetMediaEpisode: 对于 LinkId '{id}', 从 GetVideoBaseAsync 获取的 TvId 无效: {tvId}. 返回的 ScraperEpisode 的 CommentId 将为空。");
+            }
+            var commentIdForEpisode = (tvId > 0) ? $"{tvId}" : string.Empty;
+            return new ScraperEpisode() { Id = id, CommentId = commentIdForEpisode, Title = video.VideoName };
         }
 
         public override async Task<ScraperDanmaku?> GetDanmuContent(BaseItem item, string commentId)
@@ -166,6 +185,12 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
             if (string.IsNullOrEmpty(commentId))
             {
                 return null;
+            }
+
+            if (!long.TryParse(commentId, out var tvIdNumeric) || tvIdNumeric <= 0)
+            {
+                log.Warn($"[IQIYI] GetDanmuContent: 接收到无效的 TvId ('{commentId}') 用于获取弹幕。项目: '{item?.Name ?? "未知项目"}'.");
+                return null; // TvId 无效，无法获取弹幕
             }
 
             var comments = await _api.GetDanmuContentAsync(commentId, CancellationToken.None).ConfigureAwait(false);

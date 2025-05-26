@@ -23,7 +23,7 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
     public class IqiyiApi : AbstractApi
     {
         private const string MOBILE_USER_AGENT =
-            "Mozilla/5.0 (Linux; Android 8.0; Nexus 5 Build/MRA58N) AppleWebKit/536.36 (KHTML, like Gecko) Chrome/138.0.0.0 Mobile Safari/537.36";
+            "Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Mobile Safari/537.36 Edg/136.0.0.0";
 
         private new const string HTTP_USER_AGENT = MOBILE_USER_AGENT;
         private static readonly Regex regVideoInfo = new Regex(@"""videoInfo"":(\{.+?\}),""", RegexOptions.Compiled);

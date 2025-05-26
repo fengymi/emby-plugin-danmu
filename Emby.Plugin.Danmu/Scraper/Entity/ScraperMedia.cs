@@ -12,6 +12,11 @@ namespace Emby.Plugin.Danmu.Scraper.Entity
         /// item是季时，本CommentId用不到
         /// </summary>
         public string CommentId { get; set; }
+
+        /// <summary>
+        /// 增加数据来源名称 (e.g., "BilibiliID", "IqiyiID").
+        /// </summary>
+        public string ProviderId { get; set; }
         public List<ScraperEpisode> Episodes { get; set; } = new List<ScraperEpisode>();
 
     }

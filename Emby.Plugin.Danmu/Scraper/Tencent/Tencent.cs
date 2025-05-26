@@ -140,6 +140,7 @@ namespace Emby.Plugin.Danmu.Scraper.Tencent
 
             var media = new ScraperMedia();
             media.Id = id;
+            media.ProviderId = this.ProviderId; // 设置 ProviderId
             if (isMovieItemType && video.EpisodeList != null && video.EpisodeList.Count > 0)
             {
                 media.CommentId = $"{video.EpisodeList[0].Vid}";

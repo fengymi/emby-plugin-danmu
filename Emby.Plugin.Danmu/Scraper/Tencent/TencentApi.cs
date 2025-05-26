@@ -113,15 +113,44 @@ namespace Emby.Plugin.Danmu.Scraper.Tencent
             var originPostData = new TencentEpisodeListRequest() { PageParams = new TencentPageParams() { Cid = id } };
             var url = $"https://pbaccess.video.qq.com/trpc.universal_backend_service.page_server_rpc.PageServer/GetPageData?video_appid=3000010&vplatform=2";
 
-            var result = await httpClient.GetSelfResultAsyncWithError<TencentEpisodeListResult>(GetDefaultHttpRequestOptions(url), null, "POST", originPostData).ConfigureAwait(false);
-            if (result != null && result.Data != null && result.Data.ModuleListDatas != null)
+            try
             {
-                var videoInfo = new TencentVideo();
-                videoInfo.Id = id;
-                videoInfo.EpisodeList = result.Data.ModuleListDatas.First().ModuleDatas.First().ItemDataLists.ItemDatas
-                    .Select(x => x.ItemParams).Where(x => x.IsTrailer != "1").ToList();
-                _memoryCache.Set<TencentVideo?>(cacheKey, videoInfo, expiredOption);
-                return videoInfo;
+                var result = await httpClient.GetSelfResultAsyncWithError<TencentEpisodeListResult>(GetDefaultHttpRequestOptions(url), null, "POST", originPostData).ConfigureAwait(false);
+
+                if (result?.Data?.ModuleListDatas != null)
+                {
+                    var firstModuleListData = result.Data.ModuleListDatas.FirstOrDefault();
+                    if (firstModuleListData?.ModuleDatas != null)
+                    {
+                        var firstModuleData = firstModuleListData.ModuleDatas.FirstOrDefault();
+                        if (firstModuleData?.ItemDataLists?.ItemDatas != null)
+                        {
+                            var videoInfo = new TencentVideo();
+                            videoInfo.Id = id;
+                            videoInfo.EpisodeList = firstModuleData.ItemDataLists.ItemDatas
+                                .Select(x => x.ItemParams)
+                                .Where(x => x != null && x.IsTrailer != "1") // 添加对 x.ItemParams 的 null 检查
+                                .ToList();
+                            
+                            _logger.Info($"TencentApi.GetVideoAsync - 成功为ID '{id}' 获取并解析了 {videoInfo.EpisodeList.Count} 个剧集。");
+                            _memoryCache.Set<TencentVideo?>(cacheKey, videoInfo, expiredOption);
+                            return videoInfo;
+                        }
+                        _logger.Warn($"TencentApi.GetVideoAsync - 腾讯API为ID '{id}' 返回的 ModuleDatas.ItemDataLists.ItemDatas 为空或null。");
+                    }
+                    else
+                    {
+                        _logger.Warn($"TencentApi.GetVideoAsync - 腾讯API为ID '{id}' 返回的 ModuleListDatas.ModuleDatas 为空或null。");
+                    }
+                }
+                else
+                {
+                    _logger.Warn($"TencentApi.GetVideoAsync - 腾讯API为ID '{id}' 返回的结果、Data或ModuleListDatas为null。Code: {result?.Data}");
+                }
+            }
+            catch (Exception ex) // 捕获更广泛的异常，例如网络问题或反序列化问题
+            {
+                _logger.Error($"TencentApi.GetVideoAsync - 处理ID '{id}' 时发生错误: {ex.Message}", ex);
             }
 
             _memoryCache.Set<TencentVideo?>(cacheKey, null, expiredOption);
