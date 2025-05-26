@@ -165,13 +165,14 @@ namespace Emby.Plugin.Danmu.Core.Controllers
                 danmuSourceTasks.Add(danmuSourceTask);
             }
             
+            danmuSourceTasks.Add(GetDanmuSourceDto(currentItem, null));
             await Task.WhenAll(danmuSourceTasks).ConfigureAwait(false);
-            foreach(Task<DanmuSourceDto> danmuSourceTask in danmuSourceTasks) 
+            foreach (Task<DanmuSourceDto?> danmuSourceTask in danmuSourceTasks)
             {
                 var danmuSourceDto = danmuSourceTask.GetAwaiter().GetResult();
-                if (danmuSourceDto != null && danmuSourceDto.Source != null)
+                if (danmuSourceDto != null && (string.IsNullOrEmpty(danmuSourceDto.Source) || "其他".Equals(danmuSourceDto.Source) || sites.Contains(danmuSourceDto.Source)))
                 {
-                    danmuSources.Add(danmuSourceDto);       
+                    danmuSources.Add(danmuSourceDto);
                 }
             }
             
@@ -179,10 +180,11 @@ namespace Emby.Plugin.Danmu.Core.Controllers
             return danmuResultDto;
         }
 
-        private Task<DanmuSourceDto> GetDanmuSourceDto(BaseItem currentItem, string site)
+        private Task<DanmuSourceDto> GetDanmuSourceDto(BaseItem currentItem, string? site)
         {
-            var danmuPath = Path.Combine(currentItem.ContainingFolderPath, currentItem.FileNameWithoutExtension + "_" + site + ".xml");
-            _logger.Info("弹幕文件路径 danmuPath={0}", danmuPath);
+            var danmuPath = Path.Combine(
+                currentItem.ContainingFolderPath,
+                currentItem.FileNameWithoutExtension + (site != null ? "_" + site : string.Empty) + ".xml");
             var fileMeta = _fileSystem.GetFileInfo(danmuPath);
             if (!fileMeta.Exists)
             {
@@ -220,7 +222,11 @@ namespace Emby.Plugin.Danmu.Core.Controllers
 
             if (danmuSourceDto.Source == null)
             {
-                return Task.FromResult<DanmuSourceDto>(null);
+                danmuSourceDto.Source = "其他";
+                if (danmuEventDtos.Count == 0)
+                {
+                    return Task.FromResult<DanmuSourceDto>(null);
+                }
             }
 
             danmuSourceDto.DanmuEvents = danmuEventDtos;
@@ -282,11 +288,6 @@ namespace Emby.Plugin.Danmu.Core.Controllers
                         {
                             Id = searchInfo.Id,
                             Name = searchInfo.Name,
-                            // Category = searchInfo.Category,
-                            // Year = searchInfo.Year == null ? string.Empty : searchInfo.Year.ToString(),
-                            // EpisodeSize = searchInfo.EpisodeSize,
-                            // Site = scraper.Name,
-                            // SiteId = scraperId,
                         });
                     }
                 }
@@ -320,10 +321,16 @@ namespace Emby.Plugin.Danmu.Core.Controllers
                var fileMeta = _fileSystem.GetFileInfo(danmuPath);
                if (fileMeta.Exists)
                {
-                   return System.IO.File.ReadAllBytes(danmuPath);
+                   return File.ReadAllBytes(danmuPath);
                }
             }
-
+            
+            var defaultDanmuPath = Path.Combine(currentItem.ContainingFolderPath, currentItem.FileNameWithoutExtension + ".xml");
+            var defaultFileMeta = _fileSystem.GetFileInfo(defaultDanmuPath);
+            if (defaultFileMeta.Exists)
+            {
+                return File.ReadAllBytes(defaultDanmuPath);
+            }
             return null;
         }
         
