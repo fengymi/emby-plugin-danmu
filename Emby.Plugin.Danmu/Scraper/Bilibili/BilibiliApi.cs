@@ -725,11 +725,10 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
                         });
                     }
 
-                    // 每段有6分钟弹幕，为避免弹幕太大，从中间隔抽取最大60秒200条弹幕
-                    // The original comment says "从中间隔抽取最大60秒200条弹幕" but the code uses ExtractToNumber(1200)
-                    // ExtractToNumber(1200) likely means extract up to 1200 items total from the list, potentially spaced out.
-                    // Let's keep the existing logic but note the comment discrepancy.
-                    danmaku.Items.AddRange(segmentList.ExtractToNumber(1200)); // Assuming ExtractToNumber is an extension method
+                    // 将分段中的所有弹幕添加到结果列表中。
+                    // 之前的代码使用了 .ExtractToNumber(1200) 方法，这会限制每个分段最多只获取1200条弹幕，
+                    // 导致弹幕下载不完整。现在我们添加所有获取到的弹幕。
+                    danmaku.Items.AddRange(segmentList);
 
                     segmentIndex += 1;
 
@@ -863,7 +862,7 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
                         _logger.Warn($"请求首页后，在 _cookieContainer 中仍未找到有效 buvid3 Cookie。服务器响应头中未包含有效的Set-Cookie指令。");
                     }
                     return false;
-                }
+                } 
             }
             catch (HttpRequestException ex)
             {
@@ -875,7 +874,67 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
                 _logger.Error("从B站首页获取会话 Cookie 失败。", ex);
                 return false;
             }
-        }
+        } 
 
+        private async Task<bool> GetBuvidFromApi(CancellationToken cancellationToken)
+        {
+            var getBuvidUrl = "https://api.bilibili.com/x/web-frontend/getbuvid";
+            _logger.Info($"尝试从 /x/web-frontend/getbuvid 获取 buvid3，URL: {getBuvidUrl}");
+
+            try
+            {
+                var response = await _httpClient.GetAsync(getBuvidUrl, cancellationToken).ConfigureAwait(false);
+
+                _logger.Debug($"请求 /x/web-frontend/getbuvid 响应状态: {response.StatusCode}");
+
+                response.EnsureSuccessStatusCode();
+                var responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+
+                _logger.Debug($"从 /x/web-frontend/getbuvid 接收到的响应体: {responseBody}");
+
+                var buvidResult = System.Text.Json.JsonSerializer.Deserialize<BuvidApiResponse>(responseBody, _jsonOptions);
+
+                if (buvidResult?.Code == 0 && buvidResult.Data?.Buvid != null)
+                {
+                    var buvid = buvidResult.Data.Buvid;
+                    _logger.Info($"成功从 /x/web-frontend/getbuvid 获取 buvid3: {buvid}");
+
+                    // 手动设置 buvid3 Cookie
+                    var cookie = new Cookie("buvid3", buvid, "/", ".bilibili.com");
+                    _cookieContainer.Add(new Uri("https://.bilibili.com"), cookie);
+                    _logger.Info($"已在 CookieContainer 中设置新的 buvid3: {buvid.Substring(0, Math.Min(buvid.Length, 10))}...");
+                    return true;
+                }
+                else
+                {
+                    _logger.Warn($"/x/web-frontend/getbuvid API 返回异常或数据缺失: Code={buvidResult?.Code}");
+                    return false;
+                }
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.Error($"从 /x/web-frontend/getbuvid ({getBuvidUrl}) 获取 buvid3 时发生 HttpRequestException。", ex);
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error("从 /x/web-frontend/getbuvid 获取 buvid3 失败。", ex);
+                return false;
+            }
+        } 
+
+        // 定义用于反序列化 /x/web-frontend/getbuvid 响应的类
+        private class BuvidApiResponse
+        {
+            [System.Text.Json.Serialization.JsonPropertyName("code")]
+            public int Code { get; set; }
+
+            [System.Text.Json.Serialization.JsonPropertyName("data")]
+            public BuvidData Data { get; set; }
+        }
+        private class BuvidData {
+            [System.Text.Json.Serialization.JsonPropertyName("buvid")]
+            public string Buvid { get; set; }
+        }
     }
 }
