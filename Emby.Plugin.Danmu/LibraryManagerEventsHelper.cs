@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Emby.Plugin.Danmu.Configuration;
@@ -43,6 +44,11 @@ namespace Emby.Plugin.Danmu
         private readonly IFileSystem _fileSystem;
         private Timer _queueTimer;
         private readonly ScraperManager _scraperManager;
+        
+        // 为强制下载任务设计的专用队列和信号量
+        private readonly ConcurrentQueue<LibraryEvent> _forceEventQueue = new ConcurrentQueue<LibraryEvent>();
+        private readonly SemaphoreSlim _forceQueueSignal = new SemaphoreSlim(0);
+        private readonly CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
 
         public PluginConfiguration Config
         {
@@ -75,6 +81,9 @@ namespace Emby.Plugin.Danmu
             _logger = logManager.getDefaultLogger(GetType().ToString());
             _scraperManager = SingletonManager.ScraperManager;
             _fileSystem = FileSystem.instant;
+            
+            // 启动强制下载任务的后台处理循环
+            Task.Run(async () => await ProcessForceQueueLoopAsync(_cancellationTokenSource.Token).ConfigureAwait(false));
         }
 
         /// <summary>
@@ -84,13 +93,24 @@ namespace Emby.Plugin.Danmu
         /// <param name="eventType">The <see cref="EventType"/>.</param>
         public void QueueItem(BaseItem item, EventType eventType)
         {
+            if (item == null)
+            {
+                throw new ArgumentNullException(nameof(item));
+            }
+
+            // 对于强制事件(手动搜索触发)，将其加入专用队列，由后台任务依次处理
+            if (eventType == EventType.Force)
+            {
+                _logger.Info("将强制下载任务加入队列: {0}", item.Name);
+                var libraryEvent = new LibraryEvent { Item = item, EventType = eventType };
+                _forceEventQueue.Enqueue(libraryEvent);
+                _forceQueueSignal.Release(); // 发送信号，通知处理器有新任务
+                return;
+            }
+
+            // 对于其他事件类型(Add, Update)，使用现有的延迟队列逻辑
             lock (_queuedEvents)
             {
-                if (item == null)
-                {
-                    throw new ArgumentNullException(nameof(item));
-                }
-
                 if (_queueTimer == null)
                 {
                     _queueTimer = new Timer(
@@ -120,6 +140,61 @@ namespace Emby.Plugin.Danmu
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in OnQueueTimerCallbackInternal");
+            }
+        }
+        
+        /// <summary>
+        /// 循环处理强制下载队列中的任务。
+        /// </summary>
+        private async Task ProcessForceQueueLoopAsync(CancellationToken cancellationToken)
+        {
+            _logger.Info("强制下载任务队列处理器已启动。");
+            while (!cancellationToken.IsCancellationRequested)
+            {
+                try
+                {
+                    // 检查队列是否为空。如果为空，则等待信号。
+                    if (_forceEventQueue.IsEmpty)
+                    {
+                        _logger.Debug("强制下载队列为空，等待新任务...");
+                        await _forceQueueSignal.WaitAsync(cancellationToken);
+                    }
+
+                    // 尝试从队列中取出任务
+                    if (_forceEventQueue.TryDequeue(out var libraryEvent)) 
+                    {
+                        _logger.Info("开始处理队列中的强制下载任务: {0}", libraryEvent.Item.Name);
+                        try
+                        {
+                            if (libraryEvent.Item is Movie)
+                            {
+                                await ProcessQueuedMovieEvents(new[] { libraryEvent }, EventType.Force).ConfigureAwait(false);
+                            }
+                            else if (libraryEvent.Item is Episode)
+                            {
+                                await ProcessQueuedEpisodeEvents(new[] { libraryEvent }, EventType.Force).ConfigureAwait(false);
+                            }
+                            _logger.Info("已完成强制下载任务: {0}", libraryEvent.Item.Name);
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogError(ex, "处理强制下载任务时发生错误: {0}", libraryEvent.Item.Name);
+                        }
+
+                        // 每个任务处理完毕后，等待2秒
+                        _logger.Debug("强制下载任务处理完成，等待2秒...");
+                        await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    _logger.Info("强制下载任务队列处理器已停止。");
+                    break; // 正常退出
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "强制下载任务队列处理器发生意外错误。");
+                }
             }
         }
 
@@ -1158,6 +1233,9 @@ namespace Emby.Plugin.Danmu
             if (disposing)
             {
                 _queueTimer?.Dispose();
+                _cancellationTokenSource.Cancel();
+                _forceQueueSignal.Dispose();
+                _cancellationTokenSource.Dispose();
             }
         }
 

@@ -79,30 +79,16 @@ namespace Emby.Plugin.Danmu
             var scraper = _scraperManager.All().FirstOrDefault(x => x.ProviderId == info.ProviderId);
             if (scraper != null)
             {
-                // 注意！！：item这里要使用临时对象，假如直接修改原始item的ProviderIds，会导致直接修改原始item数据
-                if (item is Movie)
+                // 创建一个临时的 BaseItem 来传递 ProviderId，避免直接修改原始库项目
+                var tempItem = CreateTemporaryItemWithProviderId(item, scraper.ProviderId, info.Id);
+                if (tempItem != null)
                 {
-                    item = new Movie()
-                    {
-                        Id = item.Id, Name = item.Name,
-                        ProviderIds = new ProviderIdDictionary() { { scraper.ProviderId, info.Id } }
-                    };
+                    _libraryManagerEventsHelper.QueueItem(tempItem, EventType.Force);
                 }
-
-                if (item is Episode)
-                {
-                    item = new Episode()
-                    {
-                        Id = item.Id, Name = item.Name,
-                        ProviderIds = new ProviderIdDictionary() { { scraper.ProviderId, info.Id } }
-                    };
-                }
-
-                _libraryManagerEventsHelper.QueueItem(item, EventType.Force);
             }
 
             _memoryCache.Set<bool>(id, true, _pendingDanmuDownloadExpiredOption);
-            throw new CanIgnoreException($"弹幕下载已由{Plugin.Instance?.Name}插件接管，会自动异步下载，无需重试");
+            throw new CanIgnoreException($"'{item.Name}' 的弹幕任务已在后台开始下载，请稍后查看");
         }
 
         public async Task<IEnumerable<RemoteSubtitleInfo>> Search(SubtitleSearchRequest request,
@@ -206,6 +192,30 @@ namespace Emby.Plugin.Danmu
 
             // 保存指定弹幕元数据
             item.ProviderIds[providerId] = providerVal;
+        }
+
+        /// <summary>
+        /// 创建一个临时的 BaseItem，用于向事件队列传递 ProviderId。
+        /// </summary>
+        /// <param name="originalItem">原始的媒体项目。</param>
+        /// <param name="providerId">弹幕源的 ProviderId。</param>
+        /// <param name="mediaId">弹幕源的媒体ID。</param>
+        /// <returns>一个包含新 ProviderId 的临时 BaseItem。</returns>
+        private BaseItem CreateTemporaryItemWithProviderId(BaseItem originalItem, string providerId, string mediaId)
+        {
+            BaseItem tempItem = null;
+            var providerIds = new ProviderIdDictionary { { providerId, mediaId } };
+
+            if (originalItem is Movie)
+            {
+                tempItem = new Movie { Id = originalItem.Id, Name = originalItem.Name, ProviderIds = providerIds };
+            }
+            else if (originalItem is Episode)
+            {
+                tempItem = new Episode { Id = originalItem.Id, Name = originalItem.Name, ProviderIds = providerIds };
+            }
+
+            return tempItem;
         }
     }
 }
