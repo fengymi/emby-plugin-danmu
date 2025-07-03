@@ -555,11 +555,29 @@ namespace Emby.Plugin.Danmu
                     {
                         await this.ForceSaveProviderId(item, scraper.ProviderId, media.Id);
 
-                        var episode = await scraper.GetMediaEpisode(item, media.Id);
+                        // 确定用于获取剧集详情的ID。
+                        // 对于B站电影，需要使用ep_id，它存储在media.CommentId中。
+                        // 对于其他提供商，通常使用主要的媒体ID，它存储在media.Id中。
+                        string idForEpisodeDetails;
+                        if (scraper.ProviderId == Bilibili.ScraperProviderId)
+                        {
+                            idForEpisodeDetails = media.CommentId;
+                        }
+                        else
+                        {
+                            idForEpisodeDetails = media.Id;
+                        }
+
+                        _logger.LogInformation($"[{scraper.Name}] 强制刷新电影 '{item.Name}': 使用 ID '{idForEpisodeDetails}' 来获取剧集详情。");
+                        var episode = await scraper.GetMediaEpisode(item, idForEpisodeDetails);
                         if (episode != null)
                         {
                             // 下载弹幕xml文件
                             await this.DownloadDanmu(scraper, item, episode.CommentId, true).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            _logger.Warn($"[{scraper.Name}] 强制刷新电影 '{item.Name}': 使用 ID '{idForEpisodeDetails}' 调用 GetMediaEpisode 后返回 null。");
                         }
                     }
                 }
