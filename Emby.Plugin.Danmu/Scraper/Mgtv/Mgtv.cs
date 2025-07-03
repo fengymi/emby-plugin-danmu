@@ -203,6 +203,7 @@ namespace Emby.Plugin.Danmu.Scrapers.Mgtv
             var danmaku = new ScraperDanmaku();
             danmaku.ChatId = vid.ToLong();
             danmaku.ChatServer = "galaxy.bz.mgtv.com";
+            danmaku.ProviderId = ScraperProviderId;
             foreach (var comment in comments)
             {
 
@@ -226,6 +227,7 @@ namespace Emby.Plugin.Danmu.Scrapers.Mgtv
                 danmaku.Items.Add(danmakuText);
             }
 
+            danmaku.DataSize = danmaku.Items.Count;
             return danmaku;
         }
 
