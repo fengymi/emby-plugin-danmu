@@ -270,11 +270,18 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
                     if (seasonInfo != null && seasonInfo.Episodes != null && seasonInfo.Episodes.Any())
                     {
                         scraperMedia = new ScraperMedia() { Id = id, ProviderId = this.ProviderId }; // 使用原始 ID (season_id)
-                        foreach (var ep in seasonInfo.Episodes)
+                        
+                        // 优先使用非预告片内容，但如果只有预告片，则使用预告片
+                        var episodesToProcess = seasonInfo.Episodes.Where(e => e.BadgeType != 1).ToList();
+                        if (!episodesToProcess.Any())
+                        {
+                            log.Info($"Bilibili.GetMedia (Season ID: {id}): 未找到非预告片剧集，将使用所有返回的剧集（包括预告片）。");
+                            episodesToProcess = seasonInfo.Episodes;
+                        }
+
+                        foreach (var ep in episodesToProcess)
                         {
                             log.Info($"Bilibili.GetMedia (Season ID: {id}): 从季度中添加剧集。ep_id: {ep.Id}, 标题: '{ep.Title}', CID: {ep.CId}, AID: {ep.AId}");
-                            // 对于 PGC 内容 (电影/剧集), ep.Id 是 ep_id。
-                            // GetMediaEpisode 将使用此 ep_id 来获取 aid 和 cid。
                             string episodeIdentifier = ep.Id.ToString();
                             log.Info($"Bilibili.GetMedia (Season ID: {id}): 创建 ScraperEpisode。使用 ep_id '{episodeIdentifier}' 作为 Id 和 CommentId。原始剧集标题: '{ep.Title}'");
                             scraperMedia.Episodes.Add(new ScraperEpisode() 
@@ -432,7 +439,13 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
                         if (aid > 0 && cid > 0)
                         {
                             log.Info($"Bilibili.GetDanmuContent - Emby 项目 '{item?.Name ?? "未知项目"}' 的 CommentID '{commentId}' 是 'aid,cid' 格式。尝试使用 AID: {aid}, CID: {cid} 获取 Proto 弹幕。");
-                            return await _api.GetDanmuContentByProtoAsync(aid, cid, CancellationToken.None).ConfigureAwait(false);
+                            var danmaku = await _api.GetDanmuContentByProtoAsync(aid, cid, CancellationToken.None).ConfigureAwait(false);
+                            if (danmaku != null)
+                            {
+                                danmaku.ProviderId = ScraperProviderId;
+                            }
+
+                            return danmaku;
                         }
                         else { log.Info($"Bilibili.GetDanmuContent - Emby 项目 '{item?.Name ?? "未知项目"}' 的 'aid,cid' 格式 CommentID '{commentId}' 中 AID ({aid}) 或 CID ({cid}) 无效。"); }
                     }
@@ -449,7 +462,13 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
                     if (episode != null && episode.AId.HasValue && episode.CId > 0)
                     {
                         log.Info($"Bilibili.GetDanmuContent (ep_id: {commentId}): 为 Emby 项目 '{item?.Name ?? "未知项目"}' 获取到剧集详情。AID: {episode.AId.Value}, CID: {episode.CId}。正在获取 Proto 弹幕。");
-                        return await _api.GetDanmuContentByProtoAsync(episode.AId.Value, episode.CId, CancellationToken.None).ConfigureAwait(false);
+                        var danmaku = await _api.GetDanmuContentByProtoAsync(episode.AId.Value, episode.CId, CancellationToken.None).ConfigureAwait(false);
+                        if (danmaku != null)
+                        {
+                            danmaku.ProviderId = ScraperProviderId;
+                        }
+
+                        return danmaku;
                     }
                     else
                     {

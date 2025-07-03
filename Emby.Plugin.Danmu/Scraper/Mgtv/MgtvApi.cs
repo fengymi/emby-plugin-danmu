@@ -179,6 +179,7 @@ namespace Emby.Plugin.Danmu.Scrapers.Mgtv
                         try
                         {
                             // https://bullet-ali.hitv.com/bullet/tx/2024/12/5/093517/21920728/20.json
+                            _logger.Info($"正在下载芒果TV弹幕分段: {time + 1}/{totalMinutes} (vid={vid})");
                             var segmentUrl = $"https://{ctlbarrageResult.Data.CdnHost}/{ctlbarrageResult.Data.CdnVersion}/{time}.json";
                             var segmentResponse = await _httpClient.GetAsync(segmentUrl, cancellationToken).ConfigureAwait(false);
                             segmentResponse.EnsureSuccessStatusCode();
@@ -186,6 +187,7 @@ namespace Emby.Plugin.Danmu.Scrapers.Mgtv
                             var segmentResult = await DeserializeJsonResponseAsync<MgtvCommentSegmentResult>(segmentResponse, cancellationToken).ConfigureAwait(false);
                             if (segmentResult?.Data?.Items != null)
                             {
+                                _logger.Info($"芒果TV弹幕分段 {time + 1} 下载完成，获取到 {segmentResult.Data.Items.Count} 条弹幕。");
                                 danmuList.AddRange(segmentResult.Data.Items);
                             }
                             else
@@ -226,6 +228,7 @@ namespace Emby.Plugin.Danmu.Scrapers.Mgtv
             {
                 try
                 {
+                    _logger.Info($"正在下载芒果TV弹幕(CDN)分段: time={time} (vid={vid})");
                     var segmentUrl = $"https://galaxy.bz.mgtv.com/cdn/opbarrage?vid={vid}&pid=&cid={cid}&ticket=&time={time}&allowedRC=1";
                     var segmentResponse = await _httpClient.GetAsync(segmentUrl, cancellationToken).ConfigureAwait(false);
                     segmentResponse.EnsureSuccessStatusCode();
@@ -233,6 +236,7 @@ namespace Emby.Plugin.Danmu.Scrapers.Mgtv
                     var segmentResult = await DeserializeJsonResponseAsync<MgtvCommentSegmentResult>(segmentResponse, cancellationToken).ConfigureAwait(false);
                     if (segmentResult?.Data?.Items != null)
                     {
+                        _logger.Info($"芒果TV弹幕(CDN)分段 time={time} 下载完成，获取到 {segmentResult.Data.Items.Count} 条弹幕，下一分段 time={segmentResult.Data.Next}。");
                         danmuList.AddRange(segmentResult.Data.Items);
                         time = segmentResult.Data.Next; // 仅在成功时更新时间
                     }

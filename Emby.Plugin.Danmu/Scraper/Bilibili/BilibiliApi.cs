@@ -334,7 +334,8 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
                 if (result.Result.Episodes != null)
                 {
                     episodesToCache = result.Result.Episodes.ToList(); // 复制一份用于缓存，避免修改原始列表影响后续过滤
-                     result.Result.Episodes = result.Result.Episodes.Where(x => x.BadgeType != 1).ToList();
+                    // 不再在此处过滤预告片，将逻辑移至调用方 (Bilibili.cs)
+                    // result.Result.Episodes = result.Result.Episodes.Where(x => x.BadgeType != 1).ToList();
                 }
                                 
                 _logger.Info($"GetSeasonAsync - 成功获取并解析 Season ID {seasonId} 的剧集信息。原始集数: {originalCount}，过滤预告后集数: {result.Result.Episodes?.Count ?? 0}。");
@@ -652,6 +653,7 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
                 {
                     var url =
                         $"https://api.bilibili.com/x/v2/dm/web/seg.so?type=1&oid={cid}&pid={aid}&segment_index={segmentIndex}";
+                    _logger.Info($"正在下载B站弹幕分段: {segmentIndex} (cid={cid}, aid={aid})");
                     var response = await _httpClient.GetAsync(url, cancellationToken).ConfigureAwait(false);
 
                     if (response.StatusCode == System.Net.HttpStatusCode.NotModified)
@@ -729,6 +731,7 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
                     // 之前的代码使用了 .ExtractToNumber(1200) 方法，这会限制每个分段最多只获取1200条弹幕，
                     // 导致弹幕下载不完整。现在我们添加所有获取到的弹幕。
                     danmaku.Items.AddRange(segmentList);
+                    _logger.Info($"B站弹幕分段 {segmentIndex} 下载完成，获取到 {segmentList.Count} 条弹幕。");
 
                     segmentIndex += 1;
 
@@ -744,6 +747,7 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
                 // throw;
             }
 
+            danmaku.DataSize = danmaku.Items.Count;
             return danmaku; // Return collected danmaku (could be partial or empty on error)
         }
 
@@ -754,127 +758,70 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
         /// <returns>A Task that resolves to true if the session cookie is ensured, false otherwise.</returns>
         private async Task<bool> EnsureSessionCookie(CancellationToken cancellationToken)
         {
-            var url = "https://www.bilibili.com";
-            var uri = new Uri(url);
+            var uri = new Uri("https://www.bilibili.com");
             var currentCookies = this._cookieContainer.GetCookies(uri);
             if (currentCookies.Cast<Cookie>().Any(c => c.Name == "buvid3" && !c.Expired))
             {
-                _logger.Debug("在本地 _cookieContainer 中找到未过期的 buvid3。会话 Cookie 可能已存在。");
-                // 之前这里有 /nav API 验证逻辑，可以考虑是否恢复或改进
+                _logger.Debug("在本地 _cookieContainer 中找到未过期的 buvid3。会话 Cookie 已存在。");
                 return true;
             }
-
-            _logger.Info("本地未找到有效 buvid3，正在尝试通过请求B站首页获取 Bilibili 会话 Cookie (buvid3)...");
-
+            
+            _logger.Info("本地未找到有效 buvid3，首先尝试通过请求B站首页获取...");
+            bool successFromHomepage = false;
             try
             {
                 // 为首页请求构造 HttpRequestMessage 以便精确控制头部
                 var request = new HttpRequestMessage(HttpMethod.Get, uri);
-
-                // --- 为获取首页的请求设置特定的导航类型头部 ---
-                // 清除或覆盖可能不适用于页面导航的默认 Accept 头
                 request.Headers.Accept.Clear();
-                // 请根据浏览器抓包结果精确设置以下头部
                 request.Headers.Accept.ParseAdd("text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7"); // 示例值
                 request.Headers.AcceptLanguage.Clear();
                 request.Headers.AcceptLanguage.ParseAdd("zh-CN,zh;q=0.9,en;q=0.8"); // 示例值
                 request.Headers.AcceptEncoding.Clear();
                 request.Headers.AcceptEncoding.ParseAdd("gzip, deflate, br"); // 示例值
-                
-                // User-Agent 会从 _httpClient.DefaultRequestHeaders 继承，确保它是最新的浏览器UA
-                // 或者在这里显式设置一个最新的浏览器UA
-                // request.Headers.UserAgent.Clear();
-                // request.Headers.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-
 
                 request.Headers.TryAddWithoutValidation("Upgrade-Insecure-Requests", "1");
                 request.Headers.TryAddWithoutValidation("Sec-Fetch-Site", "none"); // 初始导航
                 request.Headers.TryAddWithoutValidation("Sec-Fetch-Mode", "navigate");
                 request.Headers.TryAddWithoutValidation("Sec-Fetch-User", "?1");
                 request.Headers.TryAddWithoutValidation("Sec-Fetch-Dest", "document");
-                
-                // 关键：确保首页请求没有 Referer，或 Referer 不指向 bilibili.com 自身
                 request.Headers.Referrer = null;
 
-                // _logger.Debug($"EnsureSessionCookie - 发往B站首页 ({url}) 的请求头信息:");
-                // foreach (var header in request.Headers) { _logger.Debug($"  RequestHeader - {header.Key}: {string.Join(", ", header.Value)}"); }
-                // ... （其他日志）
-
                 var response = await _httpClient.SendAsync(request, cancellationToken).ConfigureAwait(false);
-                // ... (后续的手动处理 Set-Cookie 和检查 buvid3 的逻辑保持不变) ...
-                // （请参考您之前包含手动处理 Set-Cookie 的版本）
-                _logger.Debug($"EnsureSessionCookie - 请求B站首页 ({url}) 响应状态: {response.StatusCode}");
-                if (!response.IsSuccessStatusCode)
-                {
-                    _logger.Warn($"请求B站首页 ({url}) 以获取会话 Cookie 时返回状态码: {response.StatusCode}");
-                    return false;
-                }
+                _logger.Debug($"EnsureSessionCookie - 请求B站首页 ({uri}) 响应状态: {response.StatusCode}");
 
-                _logger.Info("EnsureSessionCookie - 请求B站首页已完成，正在尝试手动处理 Set-Cookie 响应头。");
-                // _logger.Debug($"EnsureSessionCookie - 从B站首页 ({url}) 收到的响应头信息:");
-                // // foreach (var header in response.Headers) { _logger.Debug($"  ResponseHeader - {header.Key}: {string.Join(", ", header.Value)}"); }
-                // // foreach (var header in response.Content.Headers) { _logger.Debug($"  ResponseContentHeader - {header.Key}: {string.Join(", ", header.Value)}"); }
-
-                bool buvid3SetByServer = false;
-                if (response.Headers.TryGetValues("Set-Cookie", out IEnumerable<string> setCookieHeaders))
+                if (response.IsSuccessStatusCode)
                 {
-                    foreach (var cookieHeaderValue in setCookieHeaders)
+                    if (response.Headers.TryGetValues("Set-Cookie", out IEnumerable<string> setCookieHeaders))
                     {
-                        try
+                        foreach (var cookieHeaderValue in setCookieHeaders)
                         {
                             _cookieContainer.SetCookies(uri, cookieHeaderValue);
-                            _logger.Debug($"EnsureSessionCookie - 已处理 Set-Cookie 响应头: {cookieHeaderValue}");
-                            if (cookieHeaderValue.IndexOf("buvid3=", StringComparison.OrdinalIgnoreCase) >= 0)
-                            {
-                                buvid3SetByServer = true;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.Error($"处理 Set-Cookie 响应头值时出错: {cookieHeaderValue} (URI: {uri})", ex);
                         }
                     }
-                }
-                else
-                {
-                    _logger.Warn($"从B站首页 ({url}) 的响应中未找到 Set-Cookie 响应头。");
-                    // 记录响应体的前一部分，以帮助诊断返回的是什么类型的页面
-                    try
+                    
+                    var cookiesAfterHomepage = this._cookieContainer.GetCookies(uri);
+                    var buvid3Cookie = cookiesAfterHomepage.Cast<Cookie>().FirstOrDefault(c => c.Name == "buvid3" && !c.Expired);
+                    if (buvid3Cookie != null)
                     {
-                        string responseBody = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-                        _logger.Debug($"EnsureSessionCookie - 首页响应体 (前1000字符，当Set-Cookie未找到时): {responseBody.Substring(0, Math.Min(responseBody.Length, 1000))}");
-                    }
-                    catch (Exception readEx)
-                    {
-                        _logger.Warn($"EnsureSessionCookie - 读取首页响应体失败 (当Set-Cookie未找到时): {readEx.Message}");
+                        _logger.Info($"通过请求首页成功获取并设置了 buvid3 Cookie: {buvid3Cookie.Value.Substring(0, Math.Min(buvid3Cookie.Value.Length, 10))}...");
+                        successFromHomepage = true;
                     }
                 }
-
-                var cookiesAfterHomepage = this._cookieContainer.GetCookies(uri);
-                var buvid3Cookie = cookiesAfterHomepage.Cast<Cookie>().FirstOrDefault(c => c.Name == "buvid3" && !c.Expired);
-                if (buvid3Cookie != null) {
-                    _logger.Info($"请求首页后，在 _cookieContainer 中找到有效 buvid3 Cookie: {buvid3Cookie.Value.Substring(0, Math.Min(buvid3Cookie.Value.Length,10))}...");
-                    return true;
-                } else {
-                    if (buvid3SetByServer) {
-                        _logger.Warn($"请求首页后，服务器发送了包含buvid3的Set-Cookie，但在_cookieContainer中未找到有效buvid3。可能Cookie设置失败或已立即过期。");
-                    } else {
-                        _logger.Warn($"请求首页后，在 _cookieContainer 中仍未找到有效 buvid3 Cookie。服务器响应头中未包含有效的Set-Cookie指令。");
-                    }
-                    return false;
-                } 
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.Error($"从B站首页 ({url}) 获取会话 Cookie 时发生 HttpRequestException。", ex);
-                return false;
             }
             catch (Exception ex)
             {
-                _logger.Error("从B站首页获取会话 Cookie 失败。", ex);
-                return false;
+                _logger.Warn("尝试通过请求B站首页获取 buvid3 时发生错误，将继续尝试后备方案。");
+                // successFromHomepage 保持为 false
             }
-        } 
+
+            if (successFromHomepage)
+            {
+                return true;
+            }
+
+            _logger.Info("通过首页获取 buvid3 失败或未获取到，正在尝试通过 /getbuvid API 后备方案获取...");
+            return await GetBuvidFromApi(cancellationToken).ConfigureAwait(false);
+        }
 
         private async Task<bool> GetBuvidFromApi(CancellationToken cancellationToken)
         {
@@ -901,7 +848,7 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
 
                     // 手动设置 buvid3 Cookie
                     var cookie = new Cookie("buvid3", buvid, "/", ".bilibili.com");
-                    _cookieContainer.Add(new Uri("https://.bilibili.com"), cookie);
+                    _cookieContainer.Add(new Uri("https://www.bilibili.com"), cookie);
                     _logger.Info($"已在 CookieContainer 中设置新的 buvid3: {buvid.Substring(0, Math.Min(buvid.Length, 10))}...");
                     return true;
                 }
