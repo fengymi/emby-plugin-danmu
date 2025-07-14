@@ -110,47 +110,88 @@ namespace Emby.Plugin.Danmu.Scraper.Tencent
                 return video;
             }
 
-            var originPostData = new TencentEpisodeListRequest() { PageParams = new TencentPageParams() { Cid = id } };
             var url = $"https://pbaccess.video.qq.com/trpc.universal_backend_service.page_server_rpc.PageServer/GetPageData?video_appid=3000010&vplatform=2";
+            var allEpisodes = new List<TencentEpisode>();
+
+            // --- 切换为手动拼接分页参数的逻辑 ---
+            var pageSize = 100;
+            var beginNum = 1;
+            var endNum = pageSize;
+            var nextPageContext = string.Empty; // 用于构造请求的分页参数
+            var lastId = string.Empty; // 用于防止死循环
+            // --- 逻辑切换结束 ---
 
             try
             {
-                var result = await httpClient.GetSelfResultAsyncWithError<TencentEpisodeListResult>(GetDefaultHttpRequestOptions(url), null, "POST", originPostData).ConfigureAwait(false);
-
-                if (result?.Data?.ModuleListDatas != null)
+                do
                 {
-                    var firstModuleListData = result.Data.ModuleListDatas.FirstOrDefault();
-                    if (firstModuleListData?.ModuleDatas != null)
+                    // 首次请求PageContext为空，后续请求使用手动构造的字符串
+                    var pageParams = new TencentPageParams() { Cid = id, PageSize = $"{pageSize}", PageContext = nextPageContext };
+                    var originPostData = new TencentEpisodeListRequest() { PageParams = pageParams };
+                    var result = await httpClient.GetSelfResultAsyncWithError<TencentEpisodeListResult>(GetDefaultHttpRequestOptions(url), null, "POST", originPostData).ConfigureAwait(false);
+
+                    nextPageContext = string.Empty; // 每次循环重置，如果需要下一页再重新赋值
+
+                    // 使用更健壮的方式解析深层嵌套的对象
+                    var itemDataLists = result?.Data?.ModuleListDatas?.FirstOrDefault()?.ModuleDatas?.FirstOrDefault()?.ItemDataLists;
+
+                    if (itemDataLists?.ItemDatas != null && itemDataLists.ItemDatas.Any())
                     {
-                        var firstModuleData = firstModuleListData.ModuleDatas.FirstOrDefault();
-                        if (firstModuleData?.ItemDataLists?.ItemDatas != null)
+                        var newEpisodes = itemDataLists.ItemDatas
+                            .Select(x => x.ItemParams)
+                            // 增加更详细的过滤规则，过滤掉预告、彩蛋、直拍等非正片内容
+                            .Where(x => x != null && x.IsTrailer != "1" && !x.Title.Contains("直拍") && !x.Title.Contains("彩蛋") && !x.Title.Contains("直播回顾"))
+                            .ToList();
+
+                        // 防死循环检查：如果本次获取的最后一集和上次的最后一集相同，则停止
+                        if (newEpisodes.Any() && newEpisodes.Last().Vid == lastId)
                         {
-                            var videoInfo = new TencentVideo();
-                            videoInfo.Id = id;
-                            videoInfo.EpisodeList = firstModuleData.ItemDataLists.ItemDatas
-                                .Select(x => x.ItemParams)
-                                .Where(x => x != null && x.IsTrailer != "1") // 添加对 x.ItemParams 的 null 检查
-                                .ToList();
-                            
-                            _logger.Info($"TencentApi.GetVideoAsync - 成功为ID '{id}' 获取并解析了 {videoInfo.EpisodeList.Count} 个剧集。");
-                            _memoryCache.Set<TencentVideo?>(cacheKey, videoInfo, expiredOption);
-                            return videoInfo;
+                            _logger.Warn($"TencentApi.GetVideoAsync - 检测到重复的分页数据 (lastId: {lastId})，为避免死循环，终止获取。");
+                            break;
                         }
-                        _logger.Warn($"TencentApi.GetVideoAsync - 腾讯API为ID '{id}' 返回的 ModuleDatas.ItemDataLists.ItemDatas 为空或null。");
+
+                        allEpisodes.AddRange(newEpisodes);
+                        _logger.Info($"TencentApi.GetVideoAsync - 成功为ID '{id}' 获取并解析了 {newEpisodes.Count()} 个剧集分片。当前总数: {allEpisodes.Count}。");
+
+                        // 判断是否需要请求下一页
+                        if (itemDataLists.ItemDatas.Count == pageSize)
+                        {
+                            beginNum += pageSize;
+                            endNum += pageSize;
+                            nextPageContext = $"episode_begin={beginNum}&episode_end={endNum}&episode_step={pageSize}";
+                            lastId = allEpisodes.Last().Vid;
+
+                            // 等待一段时间避免 api 请求太快
+                            if (!cancellationToken.IsCancellationRequested)
+                            {
+                                await Task.Delay(300, cancellationToken).ConfigureAwait(false);
+                            }
+                        }
                     }
                     else
                     {
-                        _logger.Warn($"TencentApi.GetVideoAsync - 腾讯API为ID '{id}' 返回的 ModuleListDatas.ModuleDatas 为空或null。");
+                        _logger.Warn($"TencentApi.GetVideoAsync - 腾讯API为ID '{id}' 的分页请求未返回有效的剧集列表。终止分页。响应: {result?.ToJson()}");
+                        // nextPageContext 此时为空, 循环将自然终止
                     }
-                }
-                else
+                } while (!string.IsNullOrEmpty(nextPageContext) && !cancellationToken.IsCancellationRequested);
+
+                if (allEpisodes.Any())
                 {
-                    _logger.Warn($"TencentApi.GetVideoAsync - 腾讯API为ID '{id}' 返回的结果、Data或ModuleListDatas为null。Code: {result?.Data}");
+                    var videoInfo = new TencentVideo
+                    {
+                        Id = id,
+                        // 某些综艺节目可能会返回重复的剧集，这里进行去重
+                        EpisodeList = allEpisodes.GroupBy(e => e.Vid).Select(g => g.First()).ToList()
+                    };
+                    _logger.Info($"TencentApi.GetVideoAsync - ID '{id}' 的所有剧集获取完成，总计 {videoInfo.EpisodeList.Count} 个。");
+                    _memoryCache.Set<TencentVideo?>(cacheKey, videoInfo, expiredOption);
+                    return videoInfo;
                 }
+
             }
-            catch (Exception ex) // 捕获更广泛的异常，例如网络问题或反序列化问题
+            catch (Exception ex)
             {
-                _logger.Error($"TencentApi.GetVideoAsync - 处理ID '{id}' 时发生错误: {ex.Message}", ex);
+                _logger.Error("TencentApi.GetVideoAsync - 处理ID '{0}' 时发生错误", id);
             }
 
             _memoryCache.Set<TencentVideo?>(cacheKey, null, expiredOption);
@@ -186,7 +227,7 @@ namespace Emby.Plugin.Danmu.Scraper.Tencent
                     }
 
                     // 等待一段时间避免api请求太快
-                    Thread.Sleep(100);
+                    await Task.Delay(100, cancellationToken).ConfigureAwait(false);
                 }
             }
 
@@ -195,7 +236,7 @@ namespace Emby.Plugin.Danmu.Scraper.Tencent
 
         protected async Task LimitRequestFrequently()
         {
-            Thread.Sleep(1000);
+            await Task.Delay(1000).ConfigureAwait(false);
         }
     }
 }
