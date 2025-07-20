@@ -9,7 +9,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
-using System.Net.Http; // For HttpClient, HttpResponseMessage, HttpContent, etc.
+using System.Net.Http;
 using System.Net.Http.Json; // For ReadFromJsonAsync
 using System.Text.Json; // For JsonSerializerOptions
 // using ComposableAsync; // For TimeLimiter (assuming it's from this package) - REMOVE THIS
@@ -212,7 +212,8 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
             _logger.Debug($"GetDanmuContentAsync (BVID) - 请求分P列表 URL: {pageUrl}, 响应状态: {response.StatusCode}");
 
             response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<ApiResult<VideoPart[]>>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+            var responseString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var result = System.Text.Json.JsonSerializer.Deserialize<ApiResult<VideoPart[]>>(responseString, _jsonOptions);
             if (result != null && result.Code == 0 && result.Data != null)
             {
                 var part = result.Data.FirstOrDefault();
@@ -322,7 +323,8 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
             _logger.Debug($"GetSeasonAsync - 请求 Season ID {seasonId} 的剧集信息响应状态: {response.StatusCode}");
 
             response.EnsureSuccessStatusCode();
-            var result = await response.Content.ReadFromJsonAsync<ApiResult<VideoSeason>>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+            var responseString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var result = System.Text.Json.JsonSerializer.Deserialize<ApiResult<VideoSeason>>(responseString, _jsonOptions);
 
             if (result != null && result.Code == 0 && result.Result != null)
             {
@@ -547,7 +549,8 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
             
             response.EnsureSuccessStatusCode();
 
-            var result = await response.Content.ReadFromJsonAsync<ApiResult<Entity.Video>>(_jsonOptions, cancellationToken).ConfigureAwait(false);
+            var responseString = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
+            var result = System.Text.Json.JsonSerializer.Deserialize<ApiResult<Entity.Video>>(responseString, _jsonOptions);
 
             if (result != null && result.Code == 0 && result.Data != null)
             {
