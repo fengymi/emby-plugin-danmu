@@ -124,7 +124,7 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
             }
             catch (Exception ex)
             {
-                log.Error("Bilibili.Search - 处理 Emby 项目 '{0}' (标准化名称: '{1}') 时发生错误", ex, item.Name, searchName);
+                log.LogError(ex, "Bilibili.Search - 处理 Emby 项目 '{0}' (标准化名称: '{1}') 时发生错误", item.Name, searchName);
             }
 
             log.Info($"Bilibili.Search - Emby 项目 '{item.Name}' 的搜索已完成。找到 {list.Count} 个潜在的 ScraperSearchInfo 匹配项。");
@@ -207,7 +207,7 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
             }
             catch (Exception ex)
             {
-                log.LogError(ex, "Bilibili.SearchMediaId - Error during processing for Emby item: '{0}'", item.Name);
+                log.LogError(ex, "Bilibili.SearchMediaId - 在处理 Emby 项目 '{0}' 期间发生错误", item.Name);
             }
 
             if (matchedId == null) {
@@ -317,7 +317,7 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
             }
             catch (Exception ex)
             {
-                log.Error("Bilibili.GetMedia - 处理 Emby 项目 '{0}' (B站ID: '{1}') 时发生错误", ex, item.Name, id);
+                log.LogError(ex, "Bilibili.GetMedia - 处理 Emby 项目 '{0}' (B站ID: '{1}') 时发生错误", item.Name, id);
             }
 
             if (scraperMedia == null)
@@ -411,7 +411,7 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
             }
             catch (Exception ex)
             {
-                log.Error("Bilibili.GetMediaEpisode - 处理 Emby 项目 '{0}' (ID: '{1}') 时发生错误", ex, item?.Name ?? "未知项目", id);
+                log.LogError(ex, "Bilibili.GetMediaEpisode - 处理 Emby 项目 '{0}' (ID: '{1}') 时发生错误", item?.Name ?? "未知项目", id);
             }
             log.Warn($"Bilibili.GetMediaEpisode - 无法为 Emby 项目 '{item?.Name ?? "未知项目"}' (ID: '{id}') 确定有效的 ScraperEpisode。返回 null。"); // 回退或 ID 格式未处理
             return null;
@@ -486,7 +486,7 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
             }
             catch (Exception ex)
             {
-                log.Error("[{0}] 获取 CommentID '{1}' 的弹幕内容时发生错误", ex, this.Name, commentId);
+                log.LogError(ex, "[{0}] 获取 CommentID '{1}' 的弹幕内容时发生错误", this.Name, commentId);
             }
             log.Info($"Bilibili.GetDanmuContent - Emby 项目 '{item?.Name ?? "未知项目"}' (CommentID: '{commentId}') 的弹幕内容获取已完成。未返回弹幕内容。");
             return null;
