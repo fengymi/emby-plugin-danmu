@@ -66,6 +66,14 @@ namespace Emby.Plugin.Danmu.Scraper.Iqiyi
 
         public override async Task<string?> SearchMediaId(BaseItem item)
         {
+            // 优先使用条目上已保存的 ProviderId（手动锁定或上游已匹配过的专辑），
+            // 避免按名称重新搜索时选中错误的合集/预告专辑（参见 issue #57）
+            var pinnedId = item.GetProviderId(this.ProviderId);
+            if (!string.IsNullOrEmpty(pinnedId))
+            {
+                return pinnedId;
+            }
+
             var isMovieItemType = item is MediaBrowser.Controller.Entities.Movies.Movie;
             var searchName = this.NormalizeSearchName(item.Name);
             var videos = await this._api.SearchAsync(searchName, CancellationToken.None).ConfigureAwait(false);

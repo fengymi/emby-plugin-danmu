@@ -133,6 +133,22 @@ namespace Emby.Plugin.Danmu.Scraper.Bilibili
 
         public override async Task<string?> SearchMediaId(BaseItem item)
         {
+            // 优先使用条目上已保存的 ProviderId（手动锁定或上游已匹配过的专辑），
+
+            // 避免按名称重新搜索时选中错误的合集/预告专辑（参见 issue #57）
+
+            var pinnedId = item.GetProviderId(this.ProviderId);
+
+            if (!string.IsNullOrEmpty(pinnedId))
+
+            {
+
+                return pinnedId;
+
+            }
+
+
+
             log.Info($"Bilibili.SearchMediaId - 开始为 Emby 项目搜索媒体ID: '{item.Name}', 路径: '{item.Path}'");
             string? matchedId = null;
             try
